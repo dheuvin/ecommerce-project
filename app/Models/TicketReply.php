@@ -10,8 +10,13 @@ class TicketReply extends Model
         'ticket_id',
         'user_id',
         'message',
-        'is_admin'
+        'is_admin',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function ticket()
     {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\TicketReplyMail;
 use App\Models\Ticket;
+use App\Models\TicketCategory;
 use App\Models\TicketReply;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -11,34 +12,103 @@ use Illuminate\Support\Facades\Mail;
 
 class TicketController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $tickets = Ticket::where('user_id', auth()->id())
-            ->latest()
-            ->get();
+        $query = Ticket::with(['category'])
+            ->where('user_id', auth()->id());
+
+        if ($request->filled('search')) {
+            $query->where('subject', 'like', '%'.$request->search.'%');
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $tickets = $query->latest()->paginate(10);
 
         return view('tickets.index', compact('tickets'));
     }
 
-    public function adminIndex()
+    public function adminIndex(Request $request)
     {
-        $tickets = Ticket::with('user')
-            ->latest()
-            ->get();
+        $query = Ticket::with(['user', 'category']);
 
-        return view('tickets.admin.index', compact('tickets'));
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('subject', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($user) use ($search) {
+                        $user->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        if ($request->filled('category')) {
+            $query->where('ticket_category_id', $request->category);
+        }
+
+        $tickets = $query->latest()->paginate(10);
+
+        $categories = TicketCategory::orderBy('name')->get();
+
+        $totalCount = Ticket::count();
+        $openCount = Ticket::where('status', 'open')->count();
+        $pendingCount = Ticket::where('status', 'pending')->count();
+        $closedCount = Ticket::where('status', 'closed')->count();
+
+        return view('tickets.admin.index', compact(
+            'tickets',
+            'categories',
+            'totalCount',
+            'openCount',
+            'pendingCount',
+            'closedCount'
+        ));
+    }
+
+    public function updateStatus(Request $request, Ticket $ticket)
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403);
+        }
+
+        $request->validate([
+            'status' => 'required|in:open,pending,closed',
+        ]);
+
+        $ticket->update([
+            'status' => $request->status,
+        ]);
+
+        return back()->with('success', 'Status updated successfully.');
     }
 
     public function create()
     {
-        return view('tickets.create');
+        $categories = TicketCategory::where('status', 1)
+            ->orderBy('name')
+            ->get();
+
+        return view('tickets.create', compact('categories'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'subject' => 'required',
-            'message' => 'required',
+            'subject' => 'required|string|max:255',
+            'ticket_category_id' => 'required|exists:ticket_categories,id',
+            'priority' => 'required|in:low,medium,high',
+            'message' => 'required|string',
             'attachment' => 'nullable|image|max:2048',
         ]);
 
@@ -51,12 +121,17 @@ class TicketController extends Controller
 
         Ticket::create([
             'user_id' => auth()->id(),
+            'ticket_category_id' => $request->ticket_category_id,
             'subject' => $request->subject,
             'message' => $request->message,
+            'priority' => $request->priority,
+            'status' => 'open',
             'attachment' => $filePath,
         ]);
 
-        return redirect()->route('tickets.index');
+        return redirect()
+            ->route('tickets.index')
+            ->with('success', 'Ticket created successfully.');
     }
 
     public function show(Ticket $ticket)
@@ -68,7 +143,11 @@ class TicketController extends Controller
             abort(403);
         }
 
-        $ticket->load('replies');
+        $ticket->load([
+            'user',
+            'category',
+            'replies.user',
+        ]);
 
         return view('tickets.show', compact('ticket'));
     }
@@ -90,15 +169,20 @@ class TicketController extends Controller
             'is_admin' => auth()->user()->role === 'admin',
         ]);
 
-        // Send mail only if OPEN
-        if ($ticket->status !== 'closed') {
+        if (auth()->user()->role === 'admin') {
 
-            if (auth()->user()->role === 'admin') {
-                Mail::to($ticket->user->email)
-                    ->send(new TicketReplyMail($ticket, $reply));
-            } else {
-                $admin = User::where('role', 'admin')->first();
+            Mail::to($ticket->user->email)
+                ->send(new TicketReplyMail($ticket, $reply));
 
+            $ticket->update([
+                'status' => 'pending',
+            ]);
+
+        } else {
+
+            $admin = User::where('role', 'admin')->first();
+
+            if ($admin) {
                 Mail::to($admin->email)
                     ->send(new TicketReplyMail($ticket, $reply));
             }
@@ -109,7 +193,6 @@ class TicketController extends Controller
 
     public function close(Ticket $ticket)
     {
-        // only admin can close
         if (auth()->user()->role !== 'admin') {
             abort(403);
         }
@@ -118,6 +201,20 @@ class TicketController extends Controller
             'status' => 'closed',
         ]);
 
-        return back()->with('success', 'Ticket closed successfully.');
+        return back()->with(
+            'success',
+            'Ticket closed successfully.'
+        );
+    }
+
+    public function destroy(Ticket $ticket)
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403);
+        }
+
+        $ticket->delete();
+
+        return back()->with('success', 'Ticket deleted successfully.');
     }
 }

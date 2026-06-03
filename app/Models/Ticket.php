@@ -8,10 +8,12 @@ class Ticket extends Model
 {
     protected $fillable = [
         'user_id',
+        'ticket_category_id',
         'subject',
         'message',
         'status',
-        'attachment'
+        'priority',
+        'attachment',
     ];
 
     public function replies()
@@ -22,5 +24,10 @@ class Ticket extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(TicketCategory::class, 'ticket_category_id');
     }
 }

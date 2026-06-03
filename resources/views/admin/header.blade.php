@@ -1,20 +1,29 @@
-<nav class="navbar navbar-dark shadow-sm"
-     style="background: black;">
+<nav class="navbar navbar-dark px-4"
+     style="background:#111827">
 
-    <div class="container d-flex justify-content-between align-items-center">
+    <div class="container-fluid">
 
-        {{-- Left: Dashboard --}}
-        <a class="navbar-brand fw-bold" href="{{ route('admin.dashboard') }}">
+        <h4 class="text-white mb-0">
+            <i class="bi bi-speedometer2"></i>
             Admin Dashboard
-        </a>
+        </h4>
 
-        {{-- Right: Logout --}}
-        <form action="{{ route('logout') }}" method="POST" class="mb-0">
-            @csrf
-            <button class="btn btn-light btn-sm">
-                Logout
-            </button>
-        </form>
+        <div class="d-flex align-items-center gap-3">
+
+            <span class="text-white">
+                Welcome,
+                <strong>{{ auth()->user()->name }}</strong>
+            </span>
+
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button class="btn btn-danger">
+                    <i class="bi bi-box-arrow-right"></i>
+                    Logout
+                </button>
+            </form>
+
+        </div>
 
     </div>
 </nav>

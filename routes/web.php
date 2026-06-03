@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\TicketCategoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
@@ -8,10 +9,10 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WishlistController;
-use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -129,11 +130,11 @@ Route::middleware(['auth', 'role:customer,admin'])->group(function () {
 
     Route::post('/products/{product}/review', [ReviewController::class, 'store'])->name('reviews.store');
 
-    Route::get('/reviews/{review}/edit',[ReviewController::class, 'edit'])->name('reviews.edit');
+    Route::get('/reviews/{review}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
 
-    Route::put('/reviews/{review}',[ReviewController::class, 'update'])->name('reviews.update');
+    Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
 
-    Route::delete('/reviews/{review}',[ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
 });
 
@@ -163,8 +164,14 @@ Route::middleware(['auth', 'role:seller,admin'])->group(function () {
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
+    Route::resource('ticket-categories', TicketCategoryController::class);
+    Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])
+        ->name('admin.tickets.status.update');
+
     Route::patch('/tickets/{ticket}/close', [TicketController::class, 'close'])
-    ->name('tickets.close');
+        ->name('tickets.close');
+    Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])
+        ->name('tickets.destroy');
 
     Route::get('admin/tickets', [TicketController::class, 'adminIndex'])->name('admin.tickets');
 
