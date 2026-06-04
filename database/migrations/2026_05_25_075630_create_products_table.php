@@ -21,7 +21,8 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->integer('stock')->default(0);
             $table->string('main_image')->nullable();
-            $table->boolean('status')->default(1);
+            $table->string('status')->default('draft');
+            $table->text('admin_note')->nullable();
             $table->timestamps();
         });
     }

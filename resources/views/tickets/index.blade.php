@@ -1,127 +1,148 @@
 @extends('layouts.user')
 
 @section('content')
-<div class="container py-4">
+    <div class="container py-4">
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
 
-        <div>
-            <h3 class="mb-1">My Tickets</h3>
-            <p class="text-muted mb-0">Track and manage your support requests</p>
+            <div>
+                <h3 class="mb-1">My Tickets</h3>
+                <p class="text-muted mb-0">Track and manage your support requests</p>
+            </div>
+
+            <a href="{{ route('tickets.create') }}" class="btn btn-success">
+                + Create Ticket
+            </a>
+
         </div>
+        <form method="GET" class="row g-3 mb-4">
 
-        <a href="{{ route('tickets.create') }}" class="btn btn-success">
-            + Create Ticket
-        </a>
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Search subject or user..."
+                    value="{{ request('search') }}">
+            </div>
 
-    </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
+                </select>
+            </div>
 
-    <div class="card shadow-sm border-0">
+            <div class="col-md-3">
+                <button class="btn btn-primary w-100">
+                    Search
+                </button>
+            </div>
 
-        <div class="card-body">
+        </form>
 
-            <div class="table-responsive">
+        <div class="card shadow-sm border-0">
 
-                <table class="table table-hover align-middle">
+            <div class="card-body">
 
-                    <thead class="table-light">
-                        <tr>
-                            <th>Ticket ID</th>
-                            <th>Subject</th>
-                            <th>Category</th>
-                            <th>Priority</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Updated</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
+                <div class="table-responsive">
 
-                    <tbody>
+                    <table class="table table-hover align-middle">
 
-                    @forelse ($tickets as $ticket)
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ticket ID</th>
+                                <th>Subject</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Updated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
 
-                        <tr>
+                        <tbody>
 
-                            <td>
-                                <strong>
-                                    TKT-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}
-                                </strong>
-                            </td>
+                            @forelse ($tickets as $ticket)
+                                <tr>
 
-                            <td>
-                                {{ $ticket->subject }}
-                            </td>
+                                    <td>
+                                        <strong>
+                                            TKT-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}
+                                        </strong>
+                                    </td>
 
-                            <td>
-                                {{ optional($ticket->category)->name ?? '-' }}
-                            </td>
+                                    <td>
+                                        {{ $ticket->subject }}
+                                    </td>
 
-                            <td>
-                                @if ($ticket->priority == 'high')
-                                    <span class="badge bg-danger">High</span>
-                                @elseif($ticket->priority == 'medium')
-                                    <span class="badge bg-warning text-dark">Medium</span>
-                                @else
-                                    <span class="badge bg-success">Low</span>
-                                @endif
-                            </td>
+                                    <td>
+                                        {{ optional($ticket->category)->name ?? '-' }}
+                                    </td>
 
-                            <td>
-                                @if ($ticket->status == 'open')
-                                    <span class="badge bg-success">Open</span>
-                                @elseif ($ticket->status == 'pending')
-                                    <span class="badge bg-warning text-dark">Pending</span>
-                                @else
-                                    <span class="badge bg-secondary">Closed</span>
-                                @endif
-                            </td>
+                                    <td>
+                                        @if ($ticket->priority == 'high')
+                                            <span class="badge bg-danger">High</span>
+                                        @elseif($ticket->priority == 'medium')
+                                            <span class="badge bg-warning text-dark">Medium</span>
+                                        @else
+                                            <span class="badge bg-success">Low</span>
+                                        @endif
+                                    </td>
 
-                            <td>
-                                {{ $ticket->created_at->format('d M Y') }}
-                            </td>
+                                    <td>
+                                        @if ($ticket->status == 'open')
+                                            <span class="badge bg-success">Open</span>
+                                        @elseif ($ticket->status == 'pending')
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        @else
+                                            <span class="badge bg-secondary">Closed</span>
+                                        @endif
+                                    </td>
 
-                            <td>
-                                {{ $ticket->updated_at->format('d M Y') }}
-                            </td>
+                                    <td>
+                                        {{ $ticket->created_at->format('d M Y') }}
+                                    </td>
 
-                            <td>
-                                <a href="{{ route('tickets.show', $ticket->id) }}"
-                                   class="btn btn-sm btn-outline-primary">
-                                    View
-                                </a>
-                            </td>
+                                    <td>
+                                        {{ $ticket->updated_at->format('d M Y') }}
+                                    </td>
 
-                        </tr>
+                                    <td>
+                                        <a href="{{ route('tickets.show', $ticket->id) }}"
+                                            class="btn btn-sm btn-outline-primary">
+                                            View
+                                        </a>
+                                    </td>
 
-                    @empty
+                                </tr>
 
-                        <tr>
-                            <td colspan="8" class="text-center py-5">
+                            @empty
 
-                                <h5 class="text-muted">No tickets found</h5>
+                                <tr>
+                                    <td colspan="8" class="text-center py-5">
 
-                                <p class="text-muted">Create your first support ticket</p>
+                                        <h5 class="text-muted">No tickets found</h5>
 
-                                <a href="{{ route('tickets.create') }}" class="btn btn-success">
-                                    Create Ticket
-                                </a>
+                                        <p class="text-muted">Create your first support ticket</p>
 
-                            </td>
-                        </tr>
+                                        <a href="{{ route('tickets.create') }}" class="btn btn-success">
+                                            Create Ticket
+                                        </a>
 
-                    @endforelse
+                                    </td>
+                                </tr>
+                            @endforelse
 
-                    </tbody>
+                        </tbody>
 
-                </table>
+                    </table>
+
+                </div>
 
             </div>
 
         </div>
 
     </div>
-
-</div>
 @endsection

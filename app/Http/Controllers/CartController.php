@@ -32,7 +32,13 @@ class CartController extends Controller
 
         abort_if($product->user_id === Auth::id(), 403, 'You cannot add your own product to cart.');
 
-        if (! $product->status) {
+        if (
+            $product->status !== 'active'
+            && (
+                ! Auth::check()
+                || (! Auth::user()->isAdmin() && $product->user_id !== Auth::id())
+            )
+        ) {
             abort(404);
         }
 
@@ -74,7 +80,7 @@ class CartController extends Controller
 
         $item->loadMissing('product');
 
-        if (! $item->product || ! $item->product->status) {
+        if (! $item->product || $item->product->status !== 'active') {
             $item->delete();
 
             return $this->respond($request, $this->preparedCart(), 'This product is no longer available.', 'error', 422);
@@ -122,15 +128,16 @@ class CartController extends Controller
             ->first();
 
         if (! $cart) {
-            $cart = new Cart();
+            $cart = new Cart;
             $cart->setRelation('items', collect());
 
             return $cart;
         }
 
         foreach ($cart->items as $item) {
-            if (! $item->product || ! $item->product->status || $item->product->stock < 1) {
+            if (! $item->product || $item->product->status !== 'active' || $item->product->stock < 1) {
                 $item->delete();
+
                 continue;
             }
 
@@ -151,7 +158,7 @@ class CartController extends Controller
 
         return Cart::where('user_id', Auth::id())
             ->with('items.product.images')
-            ->first() ?? tap(new Cart(), function ($cart) {
+            ->first() ?? tap(new Cart, function ($cart) {
                 $cart->setRelation('items', collect());
             });
     }

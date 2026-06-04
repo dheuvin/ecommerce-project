@@ -152,13 +152,24 @@
                     @enderror
                 </div>
 
-                <!-- Status -->
                 <div class="mb-4">
                     <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="1" @selected(old('status', $product->status) == 1)>Active</option>
-                        <option value="0" @selected(old('status', $product->status) == 0)>Inactive</option>
-                    </select>
+                    <div>
+                        @if ($product->status == 'draft')
+                            <span class="badge bg-secondary">Draft</span>
+                        @elseif($product->status == 'pending')
+                            <span class="badge bg-warning">Pending Review</span>
+                        @elseif($product->status == 'active')
+                            <span class="badge bg-success">Active</span>
+                        @elseif($product->status == 'rejected')
+                            <span class="badge bg-danger">Rejected</span>
+                        @endif
+                    </div>
+                    @if ($product->status === 'rejected' && $product->admin_note)
+                        <div class="alert alert-danger mt-3 mb-0">
+                            <strong>Rejection reason:</strong> {{ $product->admin_note }}
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Buttons -->

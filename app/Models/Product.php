@@ -16,11 +16,11 @@ class Product extends Model
         'stock',
         'main_image',
         'status',
+        'admin_note',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'status' => 'boolean',
     ];
 
     public function user()

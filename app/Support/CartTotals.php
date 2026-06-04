@@ -10,7 +10,7 @@ class CartTotals
     public static function calculate(Cart $cart, ?Coupon $coupon = null): array
     {
         $items = $cart->items->filter(function ($item) {
-            return $item->product && $item->product->status;
+            return $item->product && $item->product->status === 'active';
         });
 
         $itemsCount = (int) $items->sum('quantity');

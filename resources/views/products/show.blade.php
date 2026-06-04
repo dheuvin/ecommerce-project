@@ -50,12 +50,22 @@
             </p>
 
             <p>
-                @if ($product->status)
+                @if ($product->status == 'draft')
+                    <span class="badge bg-secondary">Draft</span>
+                @elseif($product->status == 'pending')
+                    <span class="badge bg-warning">Pending Review</span>
+                @elseif($product->status == 'active')
                     <span class="badge bg-primary">Active</span>
-                @else
-                    <span class="badge bg-secondary">Inactive</span>
+                @elseif($product->status == 'rejected')
+                    <span class="badge bg-danger">Rejected</span>
                 @endif
             </p>
+
+            @if ($product->status === 'rejected' && $product->admin_note)
+                <div class="alert alert-danger">
+                    <strong>Rejection reason:</strong> {{ $product->admin_note }}
+                </div>
+            @endif
 
             <hr>
 

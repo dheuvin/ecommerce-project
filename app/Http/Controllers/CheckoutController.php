@@ -102,7 +102,7 @@ class CheckoutController extends Controller
             foreach ($cart->items as $item) {
                 $product = $products->get($item->product_id);
 
-                if (! $product || ! $product->status || $product->stock < $item->quantity) {
+                if (! $product || $product->status !== 'active' || $product->stock < $item->quantity) {
                     throw ValidationException::withMessages([
                         'cart' => 'One or more products no longer have enough stock.',
                     ]);
@@ -220,7 +220,7 @@ class CheckoutController extends Controller
         $cart->load('items.product.images');
 
         foreach ($cart->items as $item) {
-            if (! $item->product || ! $item->product->status || $item->product->stock < 1) {
+            if (! $item->product || $item->product->status !== 'active' || $item->product->stock < 1) {
                 $item->delete();
 
                 continue;

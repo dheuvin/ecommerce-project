@@ -10,8 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <style>
         * {
@@ -42,7 +41,7 @@
         .logo {
             padding: 25px;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,.1);
+            border-bottom: 1px solid rgba(255, 255, 255, .1);
         }
 
         .logo h3 {
@@ -69,7 +68,7 @@
         }
 
         .menu a:hover {
-            background: rgba(255,255,255,.08);
+            background: rgba(255, 255, 255, .08);
             color: white;
             transform: translateX(5px);
         }
@@ -95,7 +94,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 0 30px;
-            box-shadow: 0 2px 15px rgba(0,0,0,.05);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, .05);
         }
 
         .topbar-title {
@@ -120,7 +119,7 @@
             background: white;
             border-radius: 20px;
             padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,.05);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .05);
         }
 
         /* MOBILE */
@@ -158,6 +157,11 @@
 
         <div class="menu">
 
+            <a href="{{ route('profile.edit') }}">
+                <i class="bi bi-speedometer2"></i>
+                profile
+            </a>
+
             <a href="{{ route('admin.dashboard') }}">
                 <i class="bi bi-speedometer2"></i>
                 Dashboard
@@ -167,6 +171,13 @@
                 <i class="bi bi-box-seam"></i>
                 Products
             </a>
+
+            @if (auth()->check() && auth()->user()->role === 'admin')
+                <a href="{{ route('products.pending') }}">
+                    <i class="bi bi-hourglass-split"></i>
+                    Pending Products
+                </a>
+            @endif
 
             <a href="{{ route('categories.index') }}">
                 <i class="bi bi-grid"></i>
@@ -188,8 +199,7 @@
                 Tickets
             </a>
 
-            @if(auth()->check() && auth()->user()->role === 'admin')
-
+            @if (auth()->check() && auth()->user()->role === 'admin')
                 <a href="/ticket-categories">
                     <i class="bi bi-tags"></i>
                     Ticket Categories
@@ -204,7 +214,6 @@
                     <i class="bi bi-people"></i>
                     Users
                 </a>
-
             @endif
 
         </div>
@@ -247,13 +256,13 @@
 
         <div class="content">
 
-            @if(session('success'))
+            @if (session('success'))
                 <div class="alert alert-success">
                     {{ session('success') }}
                 </div>
             @endif
 
-            @if(session('error'))
+            @if (session('error'))
                 <div class="alert alert-danger">
                     {{ session('error') }}
                 </div>

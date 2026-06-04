@@ -9,6 +9,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
@@ -152,6 +153,9 @@ Route::middleware(['auth', 'role:seller,admin'])->group(function () {
 
     Route::resource('products', ProductController::class);
 
+    Route::post('/products/{product}/submit', [ProductController::class, 'submitForReview'])
+        ->name('seller.products.submit');
+
     Route::delete('/product-images/{image}', [ProductController::class, 'destroyImage'])
         ->name('products.images.destroy');
 });
@@ -165,6 +169,16 @@ Route::middleware(['auth', 'role:seller,admin'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::resource('ticket-categories', TicketCategoryController::class);
+
+    Route::get('/admin/products/pending', [ProductController::class, 'pending'])
+        ->name('products.pending');
+
+    Route::post('/products/{product}/approve', [ProductController::class, 'approve'])
+        ->name('products.approve');
+
+    Route::post('/products/{product}/reject', [ProductController::class, 'reject'])
+        ->name('products.reject');
+
     Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])
         ->name('admin.tickets.status.update');
 
@@ -223,6 +237,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('tickets/{ticket}', [TicketController::class, 'show'])
         ->name('tickets.show');
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');

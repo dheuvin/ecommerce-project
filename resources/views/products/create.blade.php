@@ -107,17 +107,6 @@
                 @enderror
             </div>
 
-            <div class="mb-4">
-                <label class="form-label">Status</label>
-                <select name="status" class="form-select @error('status') is-invalid @enderror">
-                    <option value="1" @selected(old('status', '1') == '1')>Active</option>
-                    <option value="0" @selected(old('status') == '0')>Inactive</option>
-                </select>
-                @error('status')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
             <div class="d-flex gap-2">
                 <button class="btn btn-success">Save Product</button>
                 <a href="{{ route('products.index') }}" class="btn btn-secondary">Cancel</a>

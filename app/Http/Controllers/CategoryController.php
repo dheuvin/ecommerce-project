@@ -40,13 +40,13 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')],
             'parent_id' => 'nullable|integer',
-            'status' => 'required|boolean',
+            'status' => 'required|in:0,1',
         ]);
 
         Category::create([
             'name' => $validated['name'],
             'parent_id' => $this->resolveParentId($request),
-            'status' => $validated['status'],
+                'status' => $validated['status'],
             ...(
                 Category::supportsOwnership()
                     ? ['user_id' => Auth::id()]
@@ -87,7 +87,7 @@ class CategoryController extends Controller
                 Rule::unique('categories', 'name')->ignore($category->id),
             ],
             'parent_id' => 'nullable|integer',
-            'status' => 'required|boolean',
+             'status' => 'required|in:0,1',
         ]);
 
         $category->update([

@@ -42,6 +42,67 @@ class ProductController extends Controller
         return view('products.create', compact('categories'));
     }
 
+    public function submitForReview(Product $product)
+    {
+        if ($product->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        abort_unless(in_array($product->status, ['draft', 'rejected'], true), 403);
+
+        $product->update([
+            'status' => 'pending',
+            'admin_note' => null,
+        ]);
+
+        return back()->with('success', 'Product submitted for review');
+    }
+
+    public function pending()
+    {
+        abort_unless(Auth::user()->isAdmin(), 403);
+
+        $products = Product::with('user', 'category')
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
+            
+
+        return view('products.pending', compact('products'));
+    }
+
+    // APPROVE PRODUCT
+    public function approve(Product $product)
+    {
+        abort_unless(Auth::user()->isAdmin(), 403);
+        abort_unless($product->status === 'pending', 403);
+
+        $product->update([
+            'status' => 'active',
+            'admin_note' => null,
+        ]);
+
+        return back()->with('success', 'Product approved successfully');
+    }
+
+    // REJECT PRODUCT
+    public function reject(Request $request, Product $product)
+    {
+        abort_unless(Auth::user()->isAdmin(), 403);
+        abort_unless($product->status === 'pending', 403);
+
+        $request->validate([
+            'note' => 'required|string',
+        ]);
+
+        $product->update([
+            'status' => 'rejected',
+            'admin_note' => $request->note,
+        ]);
+
+        return back()->with('success', 'Product rejected');
+    }
+
     public function store(Request $request)
     {
         $this->authorize('create', Product::class);
@@ -60,7 +121,8 @@ class ProductController extends Controller
             'price' => $validated['price'],
             'stock' => $validated['stock'],
             'main_image' => $imagePath,
-            'status' => $validated['status'],
+
+            'status' => 'draft',
         ]);
 
         $this->storeGalleryImages($request, $product);
@@ -69,12 +131,21 @@ class ProductController extends Controller
             ->with('success', 'Product created successfully');
     }
 
-    public function usershowproduct()
+    public function usershowproduct(Request $request)
     {
-        $products = Product::where('status', true)
-            ->with('images', 'user', 'category')
-            ->latest()
-            ->get();
+        $products = Product::where('status', 'active')
+            ->with('images', 'user', 'category');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $products->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('sku', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $products = $products->latest()->get();
 
         $wishlistProductIds = $this->wishlistProductIds();
 
@@ -84,7 +155,7 @@ class ProductController extends Controller
     public function categoryWiseProducts($id)
     {
         $products = Product::where('category_id', $id)
-            ->where('status', true)
+            ->where('status', 'active')
             ->with('category', 'images', 'user')
             ->latest()
             ->get();
@@ -100,7 +171,7 @@ class ProductController extends Controller
     public function subcategoryWiseProducts($id)
     {
         $products = Product::where('category_id', $id)
-            ->where('status', true)
+            ->where('status', 'active')
             ->with('category', 'images', 'user')
             ->latest()
             ->get();
@@ -116,7 +187,7 @@ class ProductController extends Controller
     public function productView(Product $product)
     {
         if (
-            ! $product->status
+            $product->status !== 'active'
             && (
                 ! Auth::check()
                 || (! Auth::user()->isAdmin() && $product->user_id !== Auth::id())
@@ -132,7 +203,7 @@ class ProductController extends Controller
         // ⭐ AMAZON STYLE RELATED PRODUCTS (SAME CATEGORY)
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
-            ->where('status', 1) // only active products
+            ->where('status', 'active') // only active products
             ->latest()
             ->take(8)
             ->get();
@@ -189,7 +260,8 @@ class ProductController extends Controller
             'price' => $validated['price'],
             'stock' => $validated['stock'],
             'main_image' => $imagePath,
-            'status' => $validated['status'],
+            'status' => $product->status === 'rejected' ? 'draft' : $product->status,
+            'admin_note' => $product->status === 'rejected' ? null : $product->admin_note,
         ]);
 
         $this->storeGalleryImages($request, $product);
@@ -252,7 +324,6 @@ class ProductController extends Controller
             'main_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'images' => ['nullable', 'array', 'max:'.$remainingSlots],
             'images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
-            'status' => 'required|boolean',
         ], [
             'images.max' => $remainingSlots === 0
                 ? 'This product already has the maximum number of gallery images.'

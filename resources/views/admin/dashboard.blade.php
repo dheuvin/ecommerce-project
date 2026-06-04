@@ -18,6 +18,10 @@
                     <a href="{{ route('products.index') }}" class="btn btn-primary">
                         Products
                     </a>
+
+                    <a href="{{ route('products.pending') }}" class="btn btn-warning">
+                        Pending Products
+                    </a>
                 </div>
             </div>
         </div>
