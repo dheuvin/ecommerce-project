@@ -116,7 +116,8 @@ Route::middleware(['auth', 'role:customer,user'])->group(function () {
 */
 
 Route::middleware(['auth', 'role:seller'])->group(function () {
-    Route::view('/dashboard', 'dashboard')->name('seller.dashboard');
+    Route::get('/admin/sellerdashboard', [ProductController::class, 'sellerDashboard'])
+    ->name('seller.dashboard');
 
 });
 
@@ -189,8 +190,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('admin/tickets', [TicketController::class, 'adminIndex'])->name('admin.tickets');
 
-    Route::view('/admin/dashboard', 'admin.dashboard')
-        ->name('admin.dashboard');
+
+
+    Route::get('/admin/dashboard', [ProductController::class, 'dashboard'])
+    ->name('admin.dashboard');
 
     Route::get('/admin/users', [UserController::class, 'index'])
         ->name('admin.user');

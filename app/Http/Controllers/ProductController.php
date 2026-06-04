@@ -2,12 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ProductApprovedMail;
+use App\Mail\ProductRejectedMail;
 use App\Models\Category;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\Ticket;
+use App\Models\User;
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +35,79 @@ class ProductController extends Controller
         $products = $productsQuery->get();
 
         return view('products.index', compact('products'));
+    }
+
+    public function dashboard()
+    {
+        abort_unless(Auth::user()->isAdmin(), 403);
+
+        $totalUsers = User::count();
+        $totalSellers = User::where('role', 'seller')->count();
+        $totalProducts = Product::count();
+        $pendingProducts = Product::where('status', 'pending')->count();
+        $totalOrders = Order::count();
+        $openTickets = Ticket::whereIn('status', ['open', 'pending'])->count();
+
+        $recentOrders = Order::latest()
+            ->take(5)
+            ->get();
+
+        $topProducts = OrderItem::select(
+            'product_name',
+            DB::raw('SUM(quantity) as sold_count'),
+            DB::raw('SUM(line_total) as revenue')
+        )
+            ->groupBy('product_name')
+            ->orderByDesc('sold_count')
+            ->take(5)
+            ->get();
+
+        $orderStatusCounts = [
+            'Completed' => Order::whereIn('status', ['confirmed', 'completed'])->count(),
+            'Processing' => Order::where('status', 'processing')->count(),
+            'Pending' => Order::where('status', 'pending')->count(),
+            'Cancelled' => Order::where('status', 'cancelled')->count(),
+        ];
+
+        $salesSeries = collect(range(6, 0))->map(function ($daysAgo) {
+            $date = now()->subDays($daysAgo);
+
+            return [
+                'label' => $date->format('d M'),
+                'total' => (float) Order::whereDate('created_at', $date)->sum('total'),
+            ];
+        });
+
+        $totalRevenue = (float) Order::sum('total');
+
+        return view('admin.dashboard', compact(
+            'totalUsers',
+            'totalSellers',
+            'totalProducts',
+            'pendingProducts',
+            'totalOrders',
+            'openTickets',
+            'recentOrders',
+            'topProducts',
+            'orderStatusCounts',
+            'salesSeries',
+            'totalRevenue',
+        ));
+    }
+
+    public function sellerDashboard()
+    {
+        $totalUsers = User::count();
+        $totalSellers = User::where('role', 'seller')->count();
+        $totalProducts = Product::count();
+        $pendingProducts = Product::where('status', 'pending')->count();
+
+        return view('admin.sellerdashboard', compact(
+            'totalUsers',
+            'totalSellers',
+            'totalProducts',
+            'pendingProducts'
+        ));
     }
 
     public function create()
@@ -66,7 +147,6 @@ class ProductController extends Controller
             ->where('status', 'pending')
             ->latest()
             ->get();
-            
 
         return view('products.pending', compact('products'));
     }
@@ -81,6 +161,16 @@ class ProductController extends Controller
             'status' => 'active',
             'admin_note' => null,
         ]);
+
+        try {
+
+            Mail::to($product->user->email)
+                ->send(new ProductApprovedMail($product));
+
+        } catch (\Exception $e) {
+
+            dd($e->getMessage());
+        }
 
         return back()->with('success', 'Product approved successfully');
     }
@@ -99,6 +189,15 @@ class ProductController extends Controller
             'status' => 'rejected',
             'admin_note' => $request->note,
         ]);
+
+        try {
+
+            Mail::to($product->user->email)
+                ->send(new ProductRejectedMail($product));
+        } catch (\Exception $e) {
+
+            dd($e->getMessage());
+        }
 
         return back()->with('success', 'Product rejected');
     }
