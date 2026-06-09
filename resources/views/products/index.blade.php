@@ -58,14 +58,18 @@
                             Edit
                         </a>
 
-                        {{-- ✅ SUBMIT FOR REVIEW --}}
-                        @if ($product->status == 'draft' || $product->status == 'rejected')
-                            <form action="{{ route('seller.products.submit', $product) }}" method="POST">
-                                @csrf
-                                <button class="btn btn-secondary btn-sm">
-                                    Submit for Review
-                                </button>
-                            </form>
+                        {{-- SUBMIT FOR REVIEW (ONLY SELLER) --}}
+                        @if (auth()->user()->isAdmin())
+                            {{-- Admin never sees this --}}
+                        @else
+                            @if ($product->status === 'draft' || $product->status === 'rejected')
+                                <form action="{{ route('seller.products.submit', $product) }}" method="POST">
+                                    @csrf
+                                    <button class="btn btn-secondary btn-sm">
+                                        Submit for Review
+                                    </button>
+                                </form>
+                            @endif
                         @endif
 
                         {{-- DELETE --}}
@@ -85,5 +89,9 @@
                 </tr>
             @endforelse
         </tbody>
+
     </table>
+    <div class="d-flex justify-content-center mt-3">
+    {{ $products->links() }}
+</div>
 @endsection

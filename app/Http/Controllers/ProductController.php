@@ -32,7 +32,7 @@ class ProductController extends Controller
             $productsQuery->where('user_id', Auth::id());
         }
 
-        $products = $productsQuery->get();
+        $products = $productsQuery->paginate(10);
 
         return view('products.index', compact('products'));
     }
@@ -146,7 +146,7 @@ class ProductController extends Controller
         $products = Product::with('user', 'category')
             ->where('status', 'pending')
             ->latest()
-            ->get();
+            ->paginate(10);
 
         return view('products.pending', compact('products'));
     }
@@ -221,7 +221,7 @@ class ProductController extends Controller
             'stock' => $validated['stock'],
             'main_image' => $imagePath,
 
-            'status' => 'draft',
+              'status' => Auth::user()->isAdmin() ? 'active' : 'draft',
         ]);
 
         $this->storeGalleryImages($request, $product);
@@ -235,16 +235,48 @@ class ProductController extends Controller
         $products = Product::where('status', 'active')
             ->with('images', 'user', 'category');
 
+        // Search
         if ($request->filled('search')) {
             $search = $request->search;
 
             $products->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('sku', 'LIKE', "%{$search}%");
+                  ->orWhere('sku', 'LIKE', "%{$search}%");
             });
         }
 
-        $products = $products->latest()->get();
+        // Price Filter
+        if ($request->filled('min_price')) {
+            $products->where('price', '>=', $request->min_price);
+        }
+
+        if ($request->filled('max_price')) {
+            $products->where('price', '<=', $request->max_price);
+        }
+        if ($request->filled('price_range')) {
+
+        switch ($request->price_range)
+        {
+
+            case '0-500':
+                $products->where('price', '<=', 500);
+            break;
+
+            case '500-1000':
+                $products->whereBetween('price', [500, 1000]);
+            break;
+
+            case '1000-5000':
+                $products->whereBetween('price', [1000, 5000]);
+            break;
+
+            case '5000-above':
+                $products->where('price', '>=', 5000);
+            break;
+        }
+    }
+
+        $products = $products->latest()->paginate(8);
 
         $wishlistProductIds = $this->wishlistProductIds();
 
@@ -257,7 +289,7 @@ class ProductController extends Controller
             ->where('status', 'active')
             ->with('category', 'images', 'user')
             ->latest()
-            ->get();
+            ->paginate(12);
 
         $wishlistProductIds = $this->wishlistProductIds();
 
@@ -273,7 +305,7 @@ class ProductController extends Controller
             ->where('status', 'active')
             ->with('category', 'images', 'user')
             ->latest()
-            ->get();
+            ->paginate(12);
 
         $wishlistProductIds = $this->wishlistProductIds();
 
@@ -418,10 +450,10 @@ class ProductController extends Controller
             ],
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'main_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'images' => ['nullable', 'array', 'max:'.$remainingSlots],
+            'price' => 'required|numeric|min:100',
+            'stock' => 'required|integer|min:10',
+            'main_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'images' => ['required', 'array', 'max:'.$remainingSlots],
             'images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
         ], [
             'images.max' => $remainingSlots === 0

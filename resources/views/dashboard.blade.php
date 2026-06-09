@@ -1,4 +1,4 @@
-@extends('layouts.app')
+{{-- @extends('layouts.app')
 
 @section('content')
 
@@ -158,4 +158,4 @@ new Chart(document.getElementById('salesChart'), {
 });
 </script>
 
-@endsection
+@endsection --}}

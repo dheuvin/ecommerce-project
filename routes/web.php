@@ -34,11 +34,7 @@ Route::get('/subcategory/{id}', [ProductController::class, 'subcategoryWiseProdu
 Route::get('/product/{product}', [ProductController::class, 'productView'])
     ->name('product.view');
 
-Route::get('/blog', [BlogController::class, 'index'])
-    ->name('blog.index');
 
-Route::get('/blog/{blog}', [BlogController::class, 'show'])
-    ->name('blog.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -185,6 +181,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::patch('/tickets/{ticket}/close', [TicketController::class, 'close'])
         ->name('tickets.close');
+
     Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])
         ->name('tickets.destroy');
 
@@ -247,4 +244,13 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
+});
+
+Route::middleware(['auth', 'role:admin,seller,customer'])->group(function () {
+
+    Route::get('/blog', [BlogController::class, 'index'])
+        ->name('blog.index');
+
+    Route::get('/blog/{blog}', [BlogController::class, 'show'])
+        ->name('blog.show');
 });

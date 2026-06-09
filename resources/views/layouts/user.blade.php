@@ -212,6 +212,81 @@
             box-shadow: 0 12px 30px rgba(17, 24, 39, .06);
         }
 
+        .category-wrapper {
+            overflow: hidden;
+        }
+
+        .category-scroll {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+
+        /* 👉 5 items visible */
+        .category-item {
+            flex: 0 0 20%;
+            /* 100% / 5 = 20% */
+            scroll-snap-align: start;
+        }
+
+        /* card styling */
+        .category-card {
+            width: 100%;
+        }
+
+        /* hide scrollbar */
+        .category-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-bar {
+            white-space: nowrap;
+        }
+
+        .parent-scroll {
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+
+        .parent-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .parent-category {
+            flex-shrink: 0;
+        }
+        .card {
+    border-radius: 15px;
+}
+
+.form-control {
+    border-radius: 10px;
+}
+
+.list-group-item {
+    background: transparent;
+    font-size: 15px;
+}
+
+.btn {
+    border-radius: 10px;
+    font-weight: 500;
+}
+.sidebar-filter {
+    position: sticky;
+    top: 20px;
+}
+
+.form-check {
+    font-size: 14px;
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+
         @media (max-width: 991.98px) {
             .nav-search {
                 margin: 12px 0;
@@ -221,13 +296,14 @@
             .section-pad {
                 padding: 40px 0;
             }
-            
+
+
         }
     </style>
 </head>
 
 <body class="d-flex flex-column min-vh-100">
-     @include('user.header')
+    @include('user.header')
 
     <div class="container mt-4">
         <div id="ajax-feedback">
@@ -250,6 +326,9 @@
             @endif
         </div>
     </div>
+
+    
+
 
     <main class="flex-grow-1">
         @yield('content')

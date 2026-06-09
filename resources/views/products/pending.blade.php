@@ -1,57 +1,53 @@
 @extends('layouts.app')
 
 @section('content')
+    <div class="container mt-4">
 
-<div class="container mt-4">
+        <h3 class="mb-4">Pending Products Review</h3>
 
-    <h3 class="mb-4">Pending Products Review</h3>
+        @forelse($products as $product)
+            <div class="card mb-3 p-3 shadow-sm">
 
-    @forelse($products as $product)
+                <h5>{{ $product->name }}</h5>
 
-<div class="card mb-3 p-3 shadow-sm">
+                <p><strong>Seller:</strong> {{ $product->user->name ?? '-' }}</p>
+                <p><strong>Price:</strong> ₹{{ number_format($product->price, 2) }}</p>
+                <p><strong>Category:</strong> {{ $product->category->name ?? '-' }}</p>
 
-    <h5>{{ $product->name }}</h5>
+                <div class="d-flex gap-2">
 
-    <p><strong>Seller:</strong> {{ $product->user->name ?? '-' }}</p>
-    <p><strong>Price:</strong> ₹{{ number_format($product->price, 2) }}</p>
-    <p><strong>Category:</strong> {{ $product->category->name ?? '-' }}</p>
+                    <form method="POST" action="{{ route('products.approve', $product->id) }}">
+                        @csrf
+                        <button type="submit" class="btn btn-success btn-sm">
+                            Approve
+                        </button>
+                    </form>
 
-    <div class="d-flex gap-2">
+                    <form method="POST" action="{{ route('products.reject', $product->id) }}" class="d-flex gap-2">
+                        @csrf
 
-        <form method="POST" action="{{ route('products.approve', $product->id) }}">
-            @csrf
-            <button type="submit" class="btn btn-success btn-sm">
-                Approve
-            </button>
-        </form>
+                        <input type="text" name="note" class="form-control form-control-sm"
+                            placeholder="Reject reason" required>
 
-        <form method="POST" action="{{ route('products.reject', $product->id) }}" class="d-flex gap-2">
-            @csrf
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            Reject
+                        </button>
+                    </form>
 
-            <input type="text"
-                   name="note"
-                   class="form-control form-control-sm"
-                   placeholder="Reject reason"
-                   required>
+                    <a href="{{ route('product.view', $product->id) }}" class="btn btn-primary btn-sm">
+                        View
+                    </a>
 
-            <button type="submit" class="btn btn-danger btn-sm">
-                Reject
-            </button>
-        </form>
+                </div>
 
-        <a href="{{ route('product.view', $product->id) }}"
-           class="btn btn-primary btn-sm">
-            View
-        </a>
+            </div>
+
+        @empty
+            <p class="text-muted">No pending products found.</p>
+        @endforelse
 
     </div>
-
-</div>
-
-@empty
-    <p class="text-muted">No pending products found.</p>
-@endforelse
-
-</div>
-
+    <div class="d-flex justify-content-center mt-3">
+        {{ $products->links() }}
+    </div>
 @endsection

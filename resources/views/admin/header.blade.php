@@ -1,5 +1,4 @@
-<nav class="navbar navbar-dark px-4"
-     style="background:#111827">
+<nav class="navbar navbar-dark px-4" style="background:#111827">
 
     <div class="container-fluid">
 

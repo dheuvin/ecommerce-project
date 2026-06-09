@@ -17,7 +17,7 @@ class CategoryController extends Controller
         $categories = $this->scopedCategoriesQuery()
             ->with('parent')
             ->latest()
-            ->get();
+            ->paginate(10);
 
         return view('categories.index', compact('categories'));
     }
