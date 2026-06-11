@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Mail\TicketReplyMail;
+use App\Mail\TicketStatusMail;
+use App\Mail\TicketCreatedMail;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\TicketReply;
@@ -90,6 +92,12 @@ class TicketController extends Controller
             'status' => $request->status,
         ]);
 
+        try {
+            Mail::to($ticket->user->email)->send(new TicketStatusMail($ticket));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return back()->with('success', 'Status updated successfully.');
     }
 
@@ -119,7 +127,7 @@ class TicketController extends Controller
                 ->store('tickets', 'public');
         }
 
-        Ticket::create([
+        $ticket = Ticket::create([
             'user_id' => auth()->id(),
             'ticket_category_id' => $request->ticket_category_id,
             'subject' => $request->subject,
@@ -128,6 +136,16 @@ class TicketController extends Controller
             'status' => 'open',
             'attachment' => $filePath,
         ]);
+        $admin = User::where('role', 'admin')->first();
+
+        if ($admin) {
+            try {
+                Mail::to($admin->email)
+                    ->send(new TicketCreatedMail($ticket));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         return redirect()
             ->route('tickets.index')
@@ -154,38 +172,55 @@ class TicketController extends Controller
 
     public function reply(Request $request, Ticket $ticket)
     {
-        if ($ticket->status === 'closed') {
-            return back()->with('error', 'This ticket is closed.');
+        if (
+            auth()->user()->role !== 'admin'
+            && $ticket->user_id !== auth()->id()
+        ) {
+            abort(403);
         }
+
+        
 
         $request->validate([
             'message' => 'required|string|max:5000',
         ]);
 
+        $isAdmin = auth()->user()->role === 'admin';
+
         $reply = TicketReply::create([
             'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'message' => $request->message,
-            'is_admin' => auth()->user()->role === 'admin',
+            'is_admin' => $isAdmin,
         ]);
 
-        if (auth()->user()->role === 'admin') {
-
-            Mail::to($ticket->user->email)
-                ->send(new TicketReplyMail($ticket, $reply));
-
-            $ticket->update([
+         $ticket->update([
                 'status' => 'pending',
             ]);
 
-        } else {
+       try {
 
-            $admin = User::where('role', 'admin')->first();
+            // USER replies → send to ADMIN
+            if (!$isAdmin) {
 
-            if ($admin) {
-                Mail::to($admin->email)
+                $adminEmails = User::where('role', 'admin')
+                    ->pluck('email')
+                    ->toArray();
+
+                Mail::to($adminEmails)
                     ->send(new TicketReplyMail($ticket, $reply));
             }
+
+            // ADMIN replies → send to TICKET OWNER
+            else {
+
+                Mail::to($ticket->user->email)
+                    ->send(new TicketReplyMail($ticket, $reply));
+            }
+
+        }
+        catch (\Throwable $e) {
+            report($e);
         }
 
         return back()->with('success', 'Reply sent successfully.');

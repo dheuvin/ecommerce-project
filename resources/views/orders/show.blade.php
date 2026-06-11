@@ -130,7 +130,7 @@
 
                                 <div class="col-md-4">
 
-                                    <div class="text-muted small">
+                                    {{-- <div class="text-muted small">
                                         Seller Earning
                                     </div>
 
@@ -142,7 +142,7 @@
                                             2
                                         ) }}
 
-                                    </div>
+                                    </div> --}}
 
                                 </div>
 
@@ -270,7 +270,7 @@
 
                     <div class="d-flex justify-content-between mt-2">
 
-                        <span>
+                        {{-- <span>
                             Seller Earnings
                         </span>
 
@@ -282,7 +282,7 @@
                                     'seller_earning'
                                 ),
                                 2
-                            ) }}
+                            ) }} --}}
 
                         </strong>
 

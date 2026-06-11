@@ -322,6 +322,16 @@
                     <i class="bi bi-house-door"></i>
                     Dashboard
                 </a>
+                @if (auth()->user()->role === 'seller')
+                    <a href="{{ route('tickets.index') }}" class="btn btn-outline-dark btn-sm mb-3 mb-md-0">
+                        <i class="bi bi-life-preserver me-1"></i> Support
+                    </a>
+                @endif
+                @if (auth()->user()->role === 'seller')
+                    <a class="fw-semibold text-decoration-none d-block mb-2" href="{{ route('blog.index') }}">
+                        <i class="bi bi-journal-text me-2"></i> Blogs
+                    </a>
+                @endif
 
                 @if (auth()->user()->isAdmin())
                     <a href="{{ route('admin.user') }}" class="{{ request()->routeIs('admin.user') ? 'active' : '' }}">
@@ -329,6 +339,7 @@
                         Users
                     </a>
                 @endif
+
 
                 <a href="{{ route('products.index') }}"
                     class="{{ request()->routeIs('products.*') && !request()->routeIs('products.pending') ? 'active' : '' }}">
@@ -381,12 +392,12 @@
                     </a>
 
                     <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">
-                    <i class="bi bi-journal-text"></i>
-                    Blog
-                </a>
+                        <i class="bi bi-journal-text"></i>
+                        Blog
+                    </a>
                 @endif
 
-                
+
 
                 <a href="{{ route('profile.edit') }}"
                     class="{{ request()->routeIs('profile.edit') ? 'active' : '' }}">
@@ -394,7 +405,21 @@
                     Settings
                 </a>
 
-                <div class="menu-divider"></div>
+                @if (auth()->user()->isAdmin())
+                    <a href="{{ route('admin.commissions.index') }}"
+                        class="{{ request()->routeIs('admin.commissions.index') ? 'active' : '' }}">
+                        <i class="bi bi-cash-stack"></i>
+                        Commissions
+                    </a>
+                    <div class="menu-divider"></div>
+                @endif
+
+                @if (auth()->user()->role === 'seller')
+                    <a href="{{ route('admin.sellercommissions.index') }}" class="fw-semibold">
+                        <i class="bi bi-cash-stack"></i>
+                        Commissions
+                    </a>
+                @endif
 
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
@@ -445,7 +470,8 @@
 
             <section class="content">
                 @if (session('success'))
-                    <div class="alert alert-success admin-alert">
+                    <div class="alert alert-success admin-alert alert-dismissible fade show js-auto-dismiss-alert"
+                        role="alert">
                         {{ session('success') }}
                     </div>
                 @endif
@@ -470,7 +496,18 @@
         </main>
     </div>
 
+
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.js-auto-dismiss-alert').forEach(function(alert) {
+                setTimeout(function() {
+                    bootstrap.Alert.getOrCreateInstance(alert).close();
+                }, 5000);
+            });
+        });
+    </script>
 </body>
 
 </html>

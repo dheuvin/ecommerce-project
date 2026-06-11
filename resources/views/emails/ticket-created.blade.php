@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Support Ticket Reply</title>
+    <title>New Support Ticket</title>
 </head>
 
 <body style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
@@ -11,36 +11,35 @@
         style="max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
 
         <div style="background: #0d6efd; color: white; padding: 15px;">
-            <h2 style="margin: 0;">Support Ticket Reply</h2>
+            <h2 style="margin: 0;">New Support Ticket</h2>
         </div>
 
         <div style="padding: 20px;">
             <p>Hello,</p>
 
-            <p>Your support ticket has received a new reply.</p>
+            <p>A new support ticket has been created.</p>
 
             <div style="background: #f8f9fa; border-left: 4px solid #0d6efd; padding: 15px; margin-bottom: 20px;">
-                <p style="margin: 0;">
-                    <strong>Ticket Subject:</strong><br>
+                <p style="margin: 0 0 10px;">
+                    <strong>Ticket:</strong><br>
+                    #TKT-{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}
+                </p>
+
+                <p style="margin: 0 0 10px;">
+                    <strong>Subject:</strong><br>
                     {{ $ticket->subject }}
                 </p>
+
+                <p style="margin: 0 0 10px;">
+                    <strong>Priority:</strong><br>
+                    {{ ucfirst($ticket->priority) }}
+                </p>
+
+                <p style="margin: 0;">
+                    <strong>Message:</strong><br>
+                    {{ $ticket->message }}
+                </p>
             </div>
-
-            <h4 style="margin-bottom: 10px;">Latest Reply</h4>
-
-            @if ($reply)
-                <div style="background: #eef5ff; padding: 15px; border-radius: 5px; border: 1px solid #cfe2ff;">
-                    {{ $reply->message }}
-                </div>
-            @else
-                <div style="background: #fff3cd; padding: 15px; border-radius: 5px;">
-                    New ticket has been created. Support team will respond soon.
-                </div>
-            @endif
-
-            <p style="margin-top: 20px;">
-                If you have any further questions, please log in to your account and continue the conversation.
-            </p>
 
             <a href="{{ route('tickets.show', $ticket) }}"
                 style="display: inline-block; padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 5px;">

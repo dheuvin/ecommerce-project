@@ -19,12 +19,14 @@ class CartTotals
         }), 2);
 
         $discount = $coupon ? $coupon->discountFor($subtotal) : 0.0;
-        $total = round(max($subtotal - $discount, 0), 2);
+        $tax = 0.0;
+        $total = round(max($subtotal - $discount + $tax, 0), 2);
 
         return [
             'items_count' => $itemsCount,
             'subtotal' => $subtotal,
             'discount_total' => $discount,
+            'tax_total' => $tax,
             'total' => $total,
             'coupon' => $coupon,
             'items' => $items,

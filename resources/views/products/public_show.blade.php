@@ -88,7 +88,7 @@
                 <div class="d-flex gap-2 flex-wrap mb-5">
                     @auth
                         @if (auth()->user()->isCustomer())
-                            <form action="{{ route('wishlist.toggle', $product) }}" method="POST">
+                            <form action="{{ route('wishlist.toggle', $product) }}" method="POST" data-ajax-wishlist="true" data-product-id="{{ $product->id }}">
                                 @csrf
                                 <button class="btn {{ $isWishlisted ? 'btn-dark' : 'btn-outline-dark' }} btn-premium px-4">
                                     <i class="bi {{ $isWishlisted ? 'bi-heart-fill' : 'bi-heart' }} me-1"></i>
@@ -97,7 +97,7 @@
                             </form>
 
                             @if ($product->stock > 0)
-                                <form action="{{ route('cart.add', $product) }}" method="POST">
+                                <form action="{{ route('cart.add', $product) }}" method="POST" data-ajax-cart="true">
                                     @csrf
                                     <input type="hidden" name="quantity" value="1">
                                     <button class="btn btn-dark btn-premium px-4">

@@ -1,15 +1,17 @@
-@extends(auth()->user()->role === 'admin' ? 'layouts.app' : 'layouts.user')
+@extends(
+    in_array(auth()->user()->role, ['admin', 'seller'])
+        ? 'layouts.app'
+        : 'layouts.user'
+)
+
+@section('sidebar')
+    @include('user.sidebar')
+@endsection
 
 @section('content')
 <div class="container py-4">
 
     <h3>My Profile</h3>
-
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
 
     <form method="POST" action="{{ route('profile.update') }}">
         @csrf
@@ -26,11 +28,11 @@
 
         <!-- EMAIL (READ ONLY) -->
         <div class="mb-3">
-            <label>Email (cannot change)</label>
+            <label>Email</label>
             <input type="email"
+                   name="email"
                    class="form-control"
-                   value="{{ $user->email }}"
-                   disabled>
+                   value="{{ $user->email }}">
         </div>
 
         <!-- BIRTHDAY -->

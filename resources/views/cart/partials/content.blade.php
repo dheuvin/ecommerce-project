@@ -108,6 +108,11 @@
                     <span class="text-muted">At checkout</span>
                 </div>
 
+                <div class="d-flex justify-content-between mt-3">
+                    <span class="text-muted">Tax</span>
+                    <strong>Rs. {{ number_format($summary['tax_total'] ?? 0, 2) }}</strong>
+                </div>
+
                 <hr>
 
                 <div class="d-flex justify-content-between fs-5">

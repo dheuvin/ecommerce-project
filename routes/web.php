@@ -14,6 +14,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\Admin\CommissionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,14 +54,13 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/login', [AuthController::class, 'login']);
 });
-
 /*
-|--------------------------------------------------------------------------
-| CUSTOMER ROUTES
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | CUSTOMER ,seller,admin
+    |--------------------------------------------------------------------------
+    */
 
-Route::middleware(['auth', 'role:customer,user'])->group(function () {
+Route::middleware(['auth', 'role:customer,seller,admin'])->group(function () {
 
     Route::get('tickets', [TicketController::class, 'index'])
         ->name('tickets.index');
@@ -70,6 +70,20 @@ Route::middleware(['auth', 'role:customer,user'])->group(function () {
 
     Route::post('tickets', [TicketController::class, 'store'])
         ->name('tickets.store');
+
+    Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
+
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | CUSTOMER ROUTES
+    |--------------------------------------------------------------------------
+    */
+
+Route::middleware(['auth', 'role:customer,user'])->group(function () {
+
+
 
     Route::get('/cart', [CartController::class, 'index'])
         ->name('cart.index');
@@ -113,7 +127,10 @@ Route::middleware(['auth', 'role:customer,user'])->group(function () {
 
 Route::middleware(['auth', 'role:seller'])->group(function () {
     Route::get('/admin/sellerdashboard', [ProductController::class, 'sellerDashboard'])
-    ->name('seller.dashboard');
+        ->name('seller.dashboard');
+
+    Route::get('/commissions/sellerindex',[CommissionController::class, 'sellercommission'])
+        ->name('admin.sellercommissions.index');
 
 });
 
@@ -122,9 +139,9 @@ Route::middleware(['auth', 'role:seller'])->group(function () {
 | user / ADMIN ROUTES
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:customer,admin'])->group(function () {
+Route::middleware(['auth', 'role:customer,se,admin'])->group(function () {
 
-    Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
+
 
     Route::post('/products/{product}/review', [ReviewController::class, 'store'])->name('reviews.store');
 
@@ -165,7 +182,8 @@ Route::middleware(['auth', 'role:seller,admin'])->group(function () {
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
-    Route::resource('ticket-categories', TicketCategoryController::class);
+    Route::get('/commissions',[CommissionController::class, 'index'])
+        ->name('admin.commissions.index');
 
     Route::get('/admin/products/pending', [ProductController::class, 'pending'])
         ->name('products.pending');
@@ -175,6 +193,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::post('/products/{product}/reject', [ProductController::class, 'reject'])
         ->name('products.reject');
+
+    Route::resource('ticket-categories', TicketCategoryController::class);
 
     Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])
         ->name('admin.tickets.status.update');

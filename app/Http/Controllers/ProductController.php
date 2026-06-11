@@ -232,87 +232,42 @@ class ProductController extends Controller
 
     public function usershowproduct(Request $request)
     {
-        $products = Product::where('status', 'active')
-            ->with('images', 'user', 'category');
-
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $products->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('sku', 'LIKE', "%{$search}%");
-            });
-        }
-
-        // Price Filter
-        if ($request->filled('min_price')) {
-            $products->where('price', '>=', $request->min_price);
-        }
-
-        if ($request->filled('max_price')) {
-            $products->where('price', '<=', $request->max_price);
-        }
-        if ($request->filled('price_range')) {
-
-        switch ($request->price_range)
-        {
-
-            case '0-500':
-                $products->where('price', '<=', 500);
-            break;
-
-            case '500-1000':
-                $products->whereBetween('price', [500, 1000]);
-            break;
-
-            case '1000-5000':
-                $products->whereBetween('price', [1000, 5000]);
-            break;
-
-            case '5000-above':
-                $products->where('price', '>=', 5000);
-            break;
-        }
-    }
-
-        $products = $products->latest()->paginate(8);
-
-        $wishlistProductIds = $this->wishlistProductIds();
-
-        return view('welcome', compact('products', 'wishlistProductIds'));
-    }
-
-    public function categoryWiseProducts($id)
-    {
-        $products = Product::where('category_id', $id)
-            ->where('status', 'active')
-            ->with('category', 'images', 'user')
+        $products = $this->filteredActiveProducts($request)
             ->latest()
-            ->paginate(12);
+            ->paginate(8)
+            ->withQueryString();
 
         $wishlistProductIds = $this->wishlistProductIds();
 
-        return view('welcome', compact(
-            'products',
-            'wishlistProductIds'
-        ));
+        return $this->catalogResponse($request, $products, $wishlistProductIds);
     }
 
-    public function subcategoryWiseProducts($id)
+    public function categoryWiseProducts(Request $request, $id)
     {
-        $products = Product::where('category_id', $id)
-            ->where('status', 'active')
-            ->with('category', 'images', 'user')
+        $categoryIds = Category::where('parent_id', $id)->pluck('id')->push((int) $id)->all();
+
+        $products = $this->filteredActiveProducts($request)
+            ->whereIn('category_id', $categoryIds)
             ->latest()
-            ->paginate(12);
+            ->paginate(12)
+            ->withQueryString();
 
         $wishlistProductIds = $this->wishlistProductIds();
 
-        return view('welcome', compact(
-            'products',
-            'wishlistProductIds'
-        ));
+        return $this->catalogResponse($request, $products, $wishlistProductIds);
+    }
+
+    public function subcategoryWiseProducts(Request $request, $id)
+    {
+        $products = $this->filteredActiveProducts($request)
+            ->where('category_id', $id)
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        $wishlistProductIds = $this->wishlistProductIds();
+
+        return $this->catalogResponse($request, $products, $wishlistProductIds);
     }
 
     public function productView(Product $product)
@@ -519,5 +474,52 @@ class ProductController extends Controller
         return Wishlist::where('user_id', Auth::id())
             ->pluck('product_id')
             ->all();
+    }
+
+    private function filteredActiveProducts(Request $request)
+    {
+        $products = Product::where('status', 'active')
+            ->with('images', 'user', 'category');
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->search);
+
+            $products->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('sku', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('min_price')) {
+            $products->where('price', '>=', max(0, (float) $request->min_price));
+        }
+
+        if ($request->filled('max_price')) {
+            $products->where('price', '<=', max(0, (float) $request->max_price));
+        }
+
+        if ($request->filled('price_range')) {
+            match ($request->price_range) {
+                '0-500' => $products->where('price', '<=', 500),
+                '500-1000' => $products->whereBetween('price', [500, 1000]),
+                '1000-5000' => $products->whereBetween('price', [1000, 5000]),
+                '5000-above' => $products->where('price', '>=', 5000),
+                default => null,
+            };
+        }
+
+        return $products;
+    }
+
+    private function catalogResponse(Request $request, $products, array $wishlistProductIds)
+    {
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'html' => view('products.partials.public_grid', compact('products', 'wishlistProductIds'))->render(),
+                'count' => $products->total(),
+            ]);
+        }
+
+        return view('welcome', compact('products', 'wishlistProductIds'));
     }
 }

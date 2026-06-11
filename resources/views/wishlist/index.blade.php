@@ -15,11 +15,11 @@
             </div>
         </div>
     @else
-        <div class="row g-4">
+        <div class="row g-4" id="wishlist-items">
             @foreach ($wishlists as $wishlist)
                 @php($product = $wishlist->product)
                 @if ($product)
-                    <div class="col-md-6 col-lg-4">
+                    <div class="col-md-6 col-lg-4" data-wishlist-card="{{ $product->id }}">
                         <div class="card h-100 border-0 shadow-sm">
                             @if ($product->primary_image_path)
                                 <img src="{{ asset('storage/' . $product->primary_image_path) }}" class="card-img-top" style="height:260px; object-fit:cover;">
@@ -34,7 +34,8 @@
                                 <div class="mt-auto d-flex gap-2">
                                     <a href="{{ route('product.view', $product) }}" class="btn btn-outline-dark w-50">View</a>
 
-                                    <form action="{{ route('wishlist.toggle', $product) }}" method="POST" class="w-50">
+                                    <form action="{{ route('wishlist.toggle', $product) }}" method="POST" class="w-50"
+                                        data-ajax-wishlist="true" data-product-id="{{ $product->id }}">
                                         @csrf
                                         <button class="btn btn-dark w-100">Remove</button>
                                     </form>

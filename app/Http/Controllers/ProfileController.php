@@ -23,18 +23,20 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'birthday' => 'nullable|date',
             'password' => 'nullable|min:6|confirmed',
+            'email' => 'email|unique:users,email',
         ]);
 
         // ONLY UPDATE NAME + BIRTHDAY
         $user->name = $request->name;
         $user->birthday = $request->birthday;
+        $user->email =$request->email;
 
         // PASSWORD UPDATE (ONLY IF FILLED)
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
 
-        // EMAIL IS NOT ALLOWED TO CHANGE ❌
+
 
         $user->save();
 

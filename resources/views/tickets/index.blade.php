@@ -1,4 +1,11 @@
-@extends('layouts.user')
+@extends(
+    in_array(auth()->user()->role, ['admin', 'seller'])
+        ? 'layouts.app'
+        : 'layouts.user'
+)
+@section('sidebar')
+    @include('user.sidebar')
+@endsection
 
 @section('content')
     <div class="container py-4">

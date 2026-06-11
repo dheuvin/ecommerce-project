@@ -23,19 +23,19 @@
             <!-- Right Section (Links) -->
             <div class="col-md-6 text-md-end">
 
-                <a class="fw-semibold text-decoration-none d-block mb-2"
+                {{-- <a class="fw-semibold text-decoration-none d-block mb-2"
                    href="{{ route('blog.index') }}">
                     Blogs
-                </a>
+                </a> --}}
 
-                @auth
+                {{-- @auth
                     @if (auth()->user()->isCustomer())
                         <a href="{{ route('tickets.index') }}"
                            class="btn btn-outline-dark btn-sm mb-3 mb-md-0">
                             <i class="bi bi-life-preserver me-1"></i> Support
                         </a>
                     @endif
-                @endauth
+                @endauth --}}
 
             </div>
 

@@ -181,6 +181,7 @@ class CartController extends Controller
                     'items_count' => $summary['items_count'],
                     'subtotal' => $summary['subtotal'],
                     'discount_total' => $summary['discount_total'],
+                    'tax_total' => $summary['tax_total'],
                     'total' => $summary['total'],
                 ],
                 'html' => view('cart.partials.content', compact('cart', 'summary'))->render(),

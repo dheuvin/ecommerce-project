@@ -1,6 +1,8 @@
 @php
     $headerCategories = $categories ?? collect();
+    $isWelcomePage = request()->routeIs('shop.index');
 @endphp
+
 
 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top shadow-sm py-3">
     <div class="container">
@@ -23,7 +25,7 @@
 
             <!-- Search -->
             <form action="{{ route('shop.index') }}" method="GET" class="mx-auto w-100 px-lg-4"
-                style="max-width:500px;">
+                style="max-width:500px;" data-catalog-search>
 
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0">
@@ -53,7 +55,8 @@
                         <a href="{{ route('wishlist.index') }}" class="btn btn-light position-relative">
                             <i class="bi bi-heart"></i>
 
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                data-wishlist-count>
                                 {{ $wishlistCount ?? 0 }}
                             </span>
                         </a>
@@ -68,7 +71,8 @@
                             <i class="bi bi-cart"></i>
 
                             <span
-                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark"
+                                data-cart-count>
                                 {{ $cartItemCount ?? 0 }}
                             </span>
                         </a>
@@ -108,16 +112,19 @@
 
 <div class="category-bar border-bottom py-2">
     <div class="container">
-        <button id="filterBtn" type="button" class="btn btn-outline-dark">
-            <i class="bi bi-funnel"></i> Filter
-        </button>
+        @if ($isWelcomePage)
+            <button id="filterBtn" type="button" class="btn btn-outline-dark">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+        @endif
 
         <!-- Parent Categories -->
         <div class="parent-scroll d-flex mt-2">
             @foreach ($headerCategories as $category)
-                <button type="button" class="btn btn-light parent-category me-2" data-category="{{ $category->id }}">
+                <a href="{{ route('category.products', $category->id) }}" class="btn btn-light parent-category me-2"
+                    data-category="{{ $category->id }}" data-catalog-link>
                     {{ $category->name }}
-                </button>
+                </a>
             @endforeach
         </div>
 
@@ -130,7 +137,7 @@
     <div id="subcats-{{ $category->id }}" class="d-none">
         @foreach ($category->children as $subcategory)
             <a href="{{ route('subcategory.products', $subcategory->id) }}"
-                class="btn btn-sm btn-outline-secondary me-2 mb-2">
+                class="btn btn-sm btn-outline-secondary me-2 mb-2" data-catalog-link>
                 {{ $subcategory->name }}
             </a>
         @endforeach
@@ -138,7 +145,7 @@
 @endforeach
 
 <div id="filterPanel" class="filter-panel d-none">
-    <form action="{{ route('shop.index') }}" method="GET">
+    <form action="{{ request()->url() }}" method="GET" data-catalog-filter>
         <h5 class="fw-bold mb-3">Filters</h5>
 
         @if (request('search'))
@@ -169,7 +176,7 @@
             </div>
         </div>
 
-        <h6 class="mt-4">Price Range</h6>
+        {{-- <h6 class="mt-4">Price Range</h6>
 
         <div class="form-check">
             <input type="radio" id="price-under-500" class="form-check-input" name="price_range" value="0-500"
@@ -184,14 +191,14 @@
         </div>
 
         <div class="form-check">
-            <input type="radio" id="price-1000-5000" class="form-check-input" name="price_range" value="1000-5000"
-                @checked(request('price_range') === '1000-5000')>
+            <input type="radio" id="price-1000-5000" class="form-check-input" name="price_range"
+                value="1000-5000" @checked(request('price_range') === '1000-5000')>
             <label class="form-check-label" for="price-1000-5000">Rs. 1000 - Rs. 5000</label>
         </div>
 
         <div class="form-check">
-            <input type="radio" id="price-5000-above" class="form-check-input" name="price_range" value="5000-above"
-                @checked(request('price_range') === '5000-above')>
+            <input type="radio" id="price-5000-above" class="form-check-input" name="price_range"
+                value="5000-above" @checked(request('price_range') === '5000-above')>
             <label class="form-check-label" for="price-5000-above">Above Rs. 5000</label>
         </div>
 
@@ -199,37 +206,28 @@
             Apply Range
         </button>
 
-        <a href="{{ route('shop.index') }}" class="btn btn-light border w-100 mt-2">
+        <a href="{{ route('shop.index') }}" class="btn btn-light border w-100 mt-2" data-catalog-link>
             Reset Filters
-        </a>
+        </a>--}}
     </form>
 </div>
 
-<script>
-    const filterButton = document.getElementById('filterBtn');
-    const filterPanel = document.getElementById('filterPanel');
 
-    if (filterButton && filterPanel) {
-        filterButton.addEventListener('click', function() {
-            filterPanel.classList.toggle('d-none');
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const filterPanel = document.getElementById('filterPanel');
+
+            const shouldOpenFilter = @json(request()->filled('search') ||
+                    request()->filled('min_price') ||
+                    request()->filled('max_price') ||
+                    request()->filled('price_range'));
+
+            if (shouldOpenFilter && filterPanel) {
+                filterPanel.classList.remove('d-none');
+            }
+
         });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const buttons = document.querySelectorAll('.parent-category');
-        const container = document.getElementById('subcategory-container');
-
-        if (!container) {
-            return;
-        }
-
-        buttons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const categoryId = this.dataset.category;
-                const source = document.getElementById('subcats-' + categoryId);
-
-                container.innerHTML = source ? source.innerHTML : '';
-            });
-        });
-    });
-</script>
+    </script>
+@endpush
