@@ -28,8 +28,11 @@ class CartController extends Controller
     {
         $request->validate([
             'quantity' => 'required|integer|min:1',
+            'variant_id' => 'required|exists:product_variants,id',
         ]);
 
+
+            $variant = \App\Models\ProductVariant::find($request->variant_id);
         abort_if($product->user_id === Auth::id(), 403, 'You cannot add your own product to cart.');
 
         if (
@@ -45,13 +48,31 @@ class CartController extends Controller
         $cart = $this->getCart();
         $item = $cart->items()
             ->where('product_id', $product->id)
+             ->where('variant_id', $variant->id)
             ->first();
+
+            // ⭐ FIX 1: check variant safely
+        if (!$variant) {
+            return $this->respond(
+                $request,
+                $cart,
+                'Size not available',
+                'error',
+                422
+            );
+        }
 
         $newQuantity = ($item?->quantity ?? 0) + $request->integer('quantity');
 
-        if ($newQuantity > $product->stock) {
-            return $this->respond($request, $cart, 'Only '.$product->stock.' item(s) available.', 'error', 422);
-        }
+        if ($newQuantity > $variant->stock) {
+        return $this->respond(
+            $request,
+            $cart,
+            'Only '.$variant->stock.' item(s) available.',
+            'error',
+            422
+        );
+    }
 
         if ($item) {
             $item->update([
@@ -62,12 +83,14 @@ class CartController extends Controller
             CartItem::create([
                 'cart_id' => $cart->id,
                 'product_id' => $product->id,
+                'variant_id' => $variant->id,
                 'quantity' => $request->integer('quantity'),
                 'price' => $product->price,
             ]);
         }
 
         return $this->respond($request, $this->preparedCart(), 'Added to cart');
+        // return $this->respond($request, $cart, 'Added to cart');
     }
 
     public function update(Request $request, CartItem $item)
@@ -78,24 +101,35 @@ class CartController extends Controller
 
         abort_unless($item->cart?->user_id === Auth::id(), 404);
 
-        $item->loadMissing('product');
+        $item->loadMissing('product', 'variant');
 
+        // if (! $item->product || $item->product->status !== 'active') {
+        //     // $item->delete();
+        //     continue;
+
+        //     return $this->respond($request, $this->preparedCart(), 'This product is no longer available.', 'error', 422);
+        // }
         if (! $item->product || $item->product->status !== 'active') {
-            $item->delete();
+    $item->delete();
 
-            return $this->respond($request, $this->preparedCart(), 'This product is no longer available.', 'error', 422);
-        }
+    return $this->respond(
+        $request,
+        $this->preparedCart(),
+        'This product is no longer available.',
+        'error',
+        422
+    );
+}
 
-        if ($request->integer('quantity') > $item->product->stock) {
-            return $this->respond(
-                $request,
-                $this->preparedCart(),
-                'Only '.$item->product->stock.' item(s) available.',
-                'error',
-                422
-            );
-        }
-
+      if ($request->integer('quantity') > $item->variant->stock) {
+    return $this->respond(
+        $request,
+        $this->preparedCart(),
+        'Only '.$item->variant->stock.' item(s) available.',
+        'error',
+        422
+    );
+}
         $item->update([
             'quantity' => $request->integer('quantity'),
             'price' => $item->product->price,
@@ -124,7 +158,10 @@ class CartController extends Controller
     private function preparedCart(): Cart
     {
         $cart = Cart::where('user_id', Auth::id())
-            ->with('items.product.images')
+                        ->with([
+                'items.product.images',
+                'items.variant',
+            ])
             ->first();
 
         if (! $cart) {
@@ -135,16 +172,20 @@ class CartController extends Controller
         }
 
         foreach ($cart->items as $item) {
-            if (! $item->product || $item->product->status !== 'active' || $item->product->stock < 1) {
-                $item->delete();
-
-                continue;
-            }
+            if (
+                    ! $item->product ||
+                    ! $item->variant ||
+                    $item->product->status !== 'active' ||
+                    $item->variant->stock < 1
+                ) {
+                    $item->delete();
+                    continue;
+                }
 
             $updates = [];
 
-            if ($item->quantity > $item->product->stock) {
-                $updates['quantity'] = $item->product->stock;
+            if ($item->quantity >$item->variant->stock) {
+                $updates['quantity'] = $item->variant->stock;
             }
 
             if ((float) $item->price !== (float) $item->product->price) {

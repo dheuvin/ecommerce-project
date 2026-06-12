@@ -8,6 +8,13 @@ use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
+     public function index()
+    {
+        $reviews = Review::latest()->get();
+
+        return view('reviews.index', compact('reviews'));
+    }
+    
     public function store(Request $request, Product $product)
 {
     $request->validate([

@@ -1,4 +1,4 @@
-@if (! isset($cart) || $cart->items->isEmpty())
+@if (!isset($cart) || $cart->items->isEmpty())
     <div class="soft-surface text-center p-5">
         <i class="bi bi-bag-heart display-4 text-muted"></i>
         <h2 class="fw-bold mt-3">Your cart is empty</h2>
@@ -15,23 +15,29 @@
                     <div class="eyebrow mb-2">Cart</div>
                     <h1 class="fw-bold mb-0">Shopping Bag</h1>
                 </div>
-                <a href="{{ route('shop.index') }}" class="btn btn-outline-dark btn-premium btn-sm px-3">Continue Shopping</a>
+                <a href="{{ route('shop.index') }}" class="btn btn-outline-dark btn-premium btn-sm px-3">Continue
+                    Shopping</a>
             </div>
 
             <div class="surface p-3 p-md-4">
                 @foreach ($cart->items as $item)
                     @php
                         $product = $item->product;
-                        $availableStock = $product?->stock ?? 0;
+                        $availableStock = $item->variant?->stock ?? 0;
+                        $selectedSize = $item->variant?->size ?? 'N/A';
                         $rowTotal = $item->price * $item->quantity;
                     @endphp
 
-                    <div class="d-flex flex-column flex-md-row gap-3 py-3 @if (! $loop->last) border-bottom @endif">
+                    <div
+                        class="d-flex flex-column flex-md-row gap-3 py-3 @if (!$loop->last) border-bottom @endif">
                         <div class="flex-shrink-0" style="width: 112px;">
                             @if ($product?->primary_image_path)
-                                <img src="{{ asset('storage/' . $product->primary_image_path) }}" class="rounded-4 border bg-light" style="height:112px; width:112px; object-fit:cover;" alt="{{ $product->name }}">
+                                <img src="{{ asset('storage/' . $product->primary_image_path) }}"
+                                    class="rounded-4 border bg-light"
+                                    style="height:112px; width:112px; object-fit:cover;" alt="{{ $product->name }}">
                             @else
-                                <div class="d-flex align-items-center justify-content-center bg-light rounded-4 border text-muted" style="height:112px; width:112px;">
+                                <div class="d-flex align-items-center justify-content-center bg-light rounded-4 border text-muted"
+                                    style="height:112px; width:112px;">
                                     <i class="bi bi-image"></i>
                                 </div>
                             @endif
@@ -41,6 +47,9 @@
                             <div class="d-flex justify-content-between align-items-start gap-3">
                                 <div>
                                     <h5 class="fw-bold mb-1">{{ $product?->name ?? 'Product removed' }}</h5>
+                                    <p class="mb-2">
+    <strong>Size:</strong> {{ $selectedSize }}
+</p>
                                     <p class="text-muted mb-2">Rs. {{ number_format($item->price, 2) }} each</p>
                                     <span class="badge bg-success-subtle text-success rounded-pill">Ready to ship</span>
                                 </div>
@@ -49,20 +58,24 @@
 
                             <div class="d-flex align-items-center gap-2 mt-3 flex-wrap">
                                 <div class="d-flex align-items-center border rounded-pill overflow-hidden">
-                                    <form method="POST" action="{{ route('cart.update', $item) }}" data-ajax-cart="true">
+                                    <form method="POST" action="{{ route('cart.update', $item) }}"
+                                        data-ajax-cart="true">
                                         @csrf
                                         <input type="hidden" name="quantity" value="{{ max($item->quantity - 1, 1) }}">
-                                        <button type="submit" class="btn btn-light border-0 rounded-0" @disabled($item->quantity <= 1) aria-label="Decrease quantity">
+                                        <button type="submit" class="btn btn-light border-0 rounded-0"
+                                            @disabled($item->quantity <= 1) aria-label="Decrease quantity">
                                             <i class="bi bi-dash"></i>
                                         </button>
                                     </form>
 
                                     <span class="px-3 fw-bold">{{ $item->quantity }}</span>
 
-                                    <form method="POST" action="{{ route('cart.update', $item) }}" data-ajax-cart="true">
+                                    <form method="POST" action="{{ route('cart.update', $item) }}"
+                                        data-ajax-cart="true">
                                         @csrf
                                         <input type="hidden" name="quantity" value="{{ $item->quantity + 1 }}">
-                                        <button type="submit" class="btn btn-light border-0 rounded-0" @disabled(! $product || $item->quantity >= $availableStock) aria-label="Increase quantity">
+                                        <button type="submit" class="btn btn-light border-0 rounded-0"
+                                            @disabled(!$product || $item->quantity >= $availableStock) aria-label="Increase quantity">
                                             <i class="bi bi-plus"></i>
                                         </button>
                                     </form>

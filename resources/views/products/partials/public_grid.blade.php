@@ -3,7 +3,8 @@
         <div class="eyebrow mb-2">New arrivals</div>
         <h2 class="fw-bold mb-1">Featured Products</h2>
         <p class="text-muted mb-0" data-product-count-text>
-            {{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }} available from our marketplace.
+            {{ $products->total() }} {{ \Illuminate\Support\Str::plural('product', $products->total()) }} available from
+            our marketplace.
         </p>
     </div>
     <div class="d-flex flex-wrap align-items-center gap-2">
@@ -18,20 +19,26 @@
         <i class="bi bi-search display-5 text-muted"></i>
         <h4 class="fw-bold mt-3">No products found</h4>
         <p class="text-muted mb-4">Try another search or adjust the filters.</p>
-        <a href="{{ route('shop.index') }}" class="btn btn-dark btn-premium px-4" data-catalog-link>View All Products</a>
+        <a href="{{ route('shop.index') }}" class="btn btn-dark btn-premium px-4" data-catalog-link>View All
+            Products</a>
     </div>
 @else
     <div class="row g-4">
         @foreach ($products as $product)
-            @php($isWishlisted = in_array($product->id, $wishlistProductIds ?? [], true))
+            @php
+                $isWishlisted = in_array($product->id, $wishlistProductIds ?? [], true);
+                $totalStock = $product->variants->sum('stock');
+            @endphp
             <div class="col-6 col-lg-4 col-xl-3">
                 <article class="card product-card h-100">
                     <div class="product-media">
                         <a href="{{ route('product.view', $product) }}" class="d-block h-100">
                             @if ($product->primary_image_path)
-                                <img src="{{ asset('storage/' . $product->primary_image_path) }}" alt="{{ $product->name }}">
+                                <img src="{{ asset('storage/' . $product->primary_image_path) }}"
+                                    alt="{{ $product->name }}">
                             @else
-                                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                                <div
+                                    class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
                                     <i class="bi bi-image fs-2 mb-2"></i>
                                     <span class="small fw-semibold">No Image</span>
                                 </div>
@@ -76,8 +83,9 @@
                         </small>
                         <div class="d-flex align-items-center justify-content-between mt-auto gap-2">
                             <span class="price">Rs. {{ number_format($product->price, 2) }}</span>
-                            <span class="badge {{ $product->stock > 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' }}">
-                                {{ $product->stock > 0 ? 'In stock' : 'Sold out' }}
+                            <span
+                                class="badge {{ $totalStock > 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' }}">
+                                {{ $totalStock > 0 ? 'In Stock (' . $totalStock . ')' : 'Sold Out' }}
                             </span>
                         </div>
 
@@ -87,16 +95,19 @@
                                     <form method="POST" action="{{ route('cart.add', $product) }}" data-ajax-cart="true">
                                         @csrf
                                         <input type="hidden" name="quantity" value="1">
-                                        <button class="btn btn-dark btn-premium w-100" @disabled($product->stock < 1)>
+                                        <button class="btn btn-dark btn-premium w-100" @disabled($totalStock < 1)>
                                             <i class="bi bi-bag-plus me-1"></i> Add to Cart
                                         </button>
                                     </form>
                                 @elseif (auth()->user()->isSeller() && auth()->id() === $product->user_id)
-                                    <a href="{{ route('products.edit', $product) }}" class="btn btn-dark btn-premium">Edit Product</a>
+                                    <a href="{{ route('products.edit', $product) }}" class="btn btn-dark btn-premium">Edit
+                                        Product</a>
                                 @elseif (auth()->user()->isAdmin())
-                                    <a href="{{ route('products.edit', $product) }}" class="btn btn-dark btn-premium">Audit Product</a>
+                                    <a href="{{ route('products.edit', $product) }}" class="btn btn-dark btn-premium">Audit
+                                        Product</a>
                                 @else
-                                    <a href="{{ route('product.view', $product) }}" class="btn btn-outline-dark btn-premium">View Details</a>
+                                    <a href="{{ route('product.view', $product) }}"
+                                        class="btn btn-outline-dark btn-premium">View Details</a>
                                 @endif
                             @else
                                 <a href="{{ route('login') }}" class="btn btn-dark btn-premium">Sign In to Buy</a>

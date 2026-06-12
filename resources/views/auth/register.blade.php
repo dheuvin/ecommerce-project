@@ -58,7 +58,15 @@
                             {{-- birthday --}}
                             <div class="mt-3">
                                 <label for="birthday">Birthday</label>
-                                <input type="date" name="birthday" class="form-control" required>
+
+                                <input type="date" name="birthday" class="form-control"
+                                    max="{{ now()->subYears(18)->format('Y-m-d') }}" required>
+
+                                {{-- @error('birthday')
+                                    <div class="text-danger">
+                                        {{ $message }}
+                                    </div>
+                                @enderror --}}
                             </div>
 
                             {{-- EMAIL --}}

@@ -218,11 +218,19 @@ class ProductController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
-            'stock' => $validated['stock'],
+            // 'stock' => $validated['stock'],
             'main_image' => $imagePath,
 
               'status' => Auth::user()->isAdmin() ? 'active' : 'draft',
         ]);
+
+       // ⭐ ONLY SIZE + STOCK
+        foreach ($request->sizes as $key => $size) {
+            $product->variants()->create([
+                'size' => $size,
+                'stock' => $request->stock[$key],
+            ]);
+        }
 
         $this->storeGalleryImages($request, $product);
 
@@ -282,7 +290,7 @@ class ProductController extends Controller
             abort(404);
         }
 
-        $product->load('category', 'reviews.user', 'images', 'user');
+        $product->load('category', 'reviews.user', 'images', 'user','variants');
 
         $wishlistProductIds = $this->wishlistProductIds();
 
@@ -304,7 +312,7 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         $this->authorize('view', $product);
-        $product->load('category', 'images', 'user');
+        $product->load('category', 'images', 'user','variants');
 
         return view('products.show', compact('product'));
     }
@@ -324,37 +332,88 @@ class ProductController extends Controller
     }
 
     public function update(Request $request, Product $product)
-    {
-        $this->authorize('update', $product);
+{
+    $this->authorize('update', $product);
 
-        $validated = $this->validateProductRequest($request, $product);
-        $imagePath = $product->main_image;
+    $remainingSlots = max(0, 4 - $product->images()->count());
 
-        if ($request->hasFile('main_image')) {
-            if ($imagePath) {
-                Storage::disk('public')->delete($imagePath);
-            }
+    $validated = $request->validate([
+        'category_id' => 'nullable|integer',
+        'subcategory_id' => 'nullable|integer',
 
-            $imagePath = $request->file('main_image')->store('products', 'public');
+        'sku' => [
+            'required',
+            'string',
+            'max:255',
+            Rule::unique('products', 'sku')->ignore($product->id),
+        ],
+
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'price' => 'required|numeric|min:100',
+
+        // ✅ variants
+        'sizes' => 'required|array|min:1',
+        'sizes.*' => 'required|string',
+
+        'stock' => 'required|array|min:1',
+        'stock.*' => 'required|integer|min:0',
+
+        // ✅ main image OPTIONAL in update
+        'main_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+
+        // ✅ gallery images OPTIONAL in update
+        'images' => 'nullable|array|max:' . $remainingSlots,
+        'images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
+    ], [
+        'images.max' => $remainingSlots === 0
+            ? 'No more gallery images allowed.'
+            : "You can upload only {$remainingSlots} more images.",
+    ]);
+
+    // ---------------- IMAGE ----------------
+    $imagePath = $product->main_image;
+
+    if ($request->hasFile('main_image')) {
+        if ($imagePath) {
+            Storage::disk('public')->delete($imagePath);
         }
 
-        $product->update([
-            'category_id' => $this->resolveCategoryId($request),
-            'sku' => $validated['sku'],
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'price' => $validated['price'],
-            'stock' => $validated['stock'],
-            'main_image' => $imagePath,
-            'status' => $product->status === 'rejected' ? 'draft' : $product->status,
-            'admin_note' => $product->status === 'rejected' ? null : $product->admin_note,
-        ]);
-
-        $this->storeGalleryImages($request, $product);
-
-        return redirect()->route('products.index')
-            ->with('success', 'Product updated successfully');
+        $imagePath = $request->file('main_image')->store('products', 'public');
     }
+
+    // ---------------- UPDATE PRODUCT ----------------
+    $product->update([
+        'category_id' => $this->resolveCategoryId($request),
+        'sku' => $validated['sku'],
+        'name' => $validated['name'],
+        'description' => $validated['description'] ?? null,
+        'price' => $validated['price'],
+        'main_image' => $imagePath,
+
+        'status' => $product->status === 'rejected' ? 'draft' : $product->status,
+        'admin_note' => $product->status === 'rejected' ? null : $product->admin_note,
+    ]);
+
+    // ---------------- VARIANTS ----------------
+    if ($request->has('sizes') && is_array($request->sizes)) {
+
+        $product->variants()->delete();
+
+        foreach ($request->sizes as $key => $size) {
+            $product->variants()->create([
+                'size' => $size,
+                'stock' => $request->stock[$key] ?? 0,
+            ]);
+        }
+    }
+
+    // ---------------- GALLERY ----------------
+    $this->storeGalleryImages($request, $product);
+
+    return redirect()->route('products.index')
+        ->with('success', 'Product updated successfully');
+}
 
     public function destroy(Product $product)
     {
@@ -406,8 +465,13 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:100',
-            'stock' => 'required|integer|min:10',
-            'main_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'sizes' => 'required|array',
+            'sizes.*' => 'required|string',
+            'stock' => 'required|array',
+            'stock.*' => 'required|integer|min:0',
+            'main_image' => $product
+                ? 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+                : 'required|image|mimes:jpg,jpeg,png|max:2048',
             'images' => ['required', 'array', 'max:'.$remainingSlots],
             'images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
         ], [

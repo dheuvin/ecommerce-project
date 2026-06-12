@@ -58,6 +58,16 @@ class Product extends Model
         return $this->hasOne(ProductImage::class)->oldestOfMany();
     }
 
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    // public function getTotalStockAttribute()
+    // {
+    //     return $this->variants->sum('stock');
+    // }
+
     public function getPrimaryImagePathAttribute(): ?string
     {
         if ($this->main_image) {

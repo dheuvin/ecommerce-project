@@ -139,9 +139,9 @@ Route::middleware(['auth', 'role:seller'])->group(function () {
 | user / ADMIN ROUTES
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:customer,se,admin'])->group(function () {
+Route::middleware(['auth', 'role:customer,seller,admin'])->group(function () {
 
-
+    Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
 
     Route::post('/products/{product}/review', [ReviewController::class, 'store'])->name('reviews.store');
 

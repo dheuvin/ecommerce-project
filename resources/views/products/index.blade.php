@@ -36,7 +36,7 @@
                     <td>{{ $product->sku }}</td>
                     <td>{{ $product->category->name ?? '-' }}</td>
                     <td>Rs. {{ number_format($product->price, 2) }}</td>
-                    <td>{{ $product->stock }}</td>
+                    <td>{{ $product->variants->sum('stock') }}</td>
                     <td>
                         @if ($product->status == 'draft')
                             <span class="badge bg-secondary">Draft</span>

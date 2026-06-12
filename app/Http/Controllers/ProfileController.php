@@ -20,10 +20,10 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
             'birthday' => 'nullable|date',
             'password' => 'nullable|min:6|confirmed',
-            'email' => 'email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
         ]);
 
         // ONLY UPDATE NAME + BIRTHDAY

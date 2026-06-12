@@ -102,11 +102,24 @@ class CheckoutController extends Controller
             foreach ($cart->items as $item) {
                 $product = $products->get($item->product_id);
 
-                if (! $product || $product->status !== 'active' || $product->stock < $item->quantity) {
-                    throw ValidationException::withMessages([
-                        'cart' => 'One or more products no longer have enough stock.',
-                    ]);
-                }
+                // if (! $product || $product->status !== 'active' || $product->stock < $item->quantity) {
+                //     throw ValidationException::withMessages([
+                //         'cart' => 'One or more products no longer have enough stock.',
+                //     ]);
+                // }
+
+                $variant = $item->variant;
+
+if (
+    ! $product ||
+    $product->status !== 'active' ||
+    ! $variant ||
+    $variant->stock < $item->quantity
+) {
+    throw ValidationException::withMessages([
+        'cart' => 'One or more products no longer have enough stock.',
+    ]);
+}
 
                 if ((float) $item->price !== (float) $product->price) {
                     $item->update(['price' => $product->price]);
@@ -195,7 +208,8 @@ class CheckoutController extends Controller
 
                 ]);
 
-                $product->decrement('stock', $item->quantity);
+                // $product->decrement('stock', $item->quantity);
+                $variant->decrement('stock', $item->quantity);
             }
 
             if ($coupon) {
@@ -217,19 +231,23 @@ class CheckoutController extends Controller
     private function preparedCart(): Cart
     {
         $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
-        $cart->load('items.product.images');
+        $cart->load('items.product.images', 'items.variant');
 
         foreach ($cart->items as $item) {
-            if (! $item->product || $item->product->status !== 'active' || $item->product->stock < 1) {
-                $item->delete();
-
-                continue;
-            }
+            if (
+    ! $item->product ||
+    ! $item->variant ||
+    $item->product->status !== 'active' ||
+    $item->variant->stock < 1
+) {
+    $item->delete();
+    continue;
+}
 
             $updates = [];
 
-            if ($item->quantity > $item->product->stock) {
-                $updates['quantity'] = $item->product->stock;
+            if ($item->quantity > $item->variant->stock) {
+                $updates['quantity'] = $item->variant->stock;
             }
 
             if ((float) $item->price !== (float) $item->product->price) {
@@ -241,7 +259,7 @@ class CheckoutController extends Controller
             }
         }
 
-        return $cart->fresh('items.product.images');
+        return $cart->fresh('items.product.images','items.variant');
     }
 
     private function sessionCoupon(Cart $cart): ?Coupon

@@ -9,7 +9,8 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
@@ -257,31 +258,60 @@
             .parent-category {
                 flex-shrink: 0;
             }
+
             .card {
-        border-radius: 15px;
-    }
+                border-radius: 15px;
+            }
 
-    .form-control {
-        border-radius: 10px;
-    }
+            .form-control {
+                border-radius: 10px;
+            }
 
-    .list-group-item {
-        background: transparent;
-        font-size: 15px;
-    }
+            .list-group-item {
+                background: transparent;
+                font-size: 15px;
+            }
 
-    .btn {
-        border-radius: 10px;
-        font-weight: 500;
-    }
-    .sidebar-filter {
-        position: sticky;
-        top: 20px;
-    }
+            .btn {
+                border-radius: 10px;
+                font-weight: 500;
+            }
 
-    .form-check {
-        font-size: 14px;
-    }
+            .sidebar-filter {
+                position: sticky;
+                top: 20px;
+            }
+
+            .form-check {
+                font-size: 14px;
+            }
+
+            .size-box {
+                cursor: pointer;
+                min-width: 70px;
+                transition: 0.2s;
+            }
+
+            /* Styling modern selection states */
+            .size-box {
+                cursor: pointer;
+                transition: all 0.2s ease-in-out;
+            }
+
+            .size-box:has(input[type="radio"]:checked) {
+                border-color: #000000 !important;
+                background-color: #f8f9fa;
+                box-shadow: 0 0 0 2px #000000;
+            }
+
+            .size-box:has(input[type="radio"]:disabled) {
+                cursor: not-allowed;
+                border-style: dashed;
+            }
+
+            .transition-all {
+                transition: all 0.2s ease-in-out;
+            }
 
             .form-check-label {
                 cursor: pointer;
@@ -321,35 +351,34 @@
         @include('user.header')
 
 
-            <div id="ajax-feedback">
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show js-auto-dismiss-alert" role="alert">
-                        {{ session('success') }}
-                    </div>
-                @endif
+        <div id="ajax-feedback">
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show js-auto-dismiss-alert" role="alert">
+                    {{ session('success') }}
+                </div>
+            @endif
 
-                @if (session('error'))
-                    <div class="alert alert-danger">{{ session('error') }}</div>
-                @endif
+            @if (session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
 
-                @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul class="mb-0 ps-3">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-            </div>
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0 ps-3">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        </div>
 
 
         {{-- <div class="container-fluid px-2 mt-3"> --}}
-            <div>
+        <div>
             <div class="row">
 
                 @hasSection('sidebar')
-
                     <div class="col-md-3">
                         @yield('sidebar')
                     </div>
@@ -357,13 +386,10 @@
                     <div class="col-md-9">
                         @yield('content')
                     </div>
-
                 @else
-
                     <div class="col-12">
                         @yield('content')
                     </div>
-
                 @endif
 
             </div>
@@ -373,9 +399,9 @@
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                document.querySelectorAll('.js-auto-dismiss-alert').forEach(function (alert) {
-                    setTimeout(function () {
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('.js-auto-dismiss-alert').forEach(function(alert) {
+                    setTimeout(function() {
                         bootstrap.Alert.getOrCreateInstance(alert).close();
                     }, 5000);
                 });
@@ -402,7 +428,7 @@
                     `;
 
                     const alert = feedback.querySelector('.alert');
-                    setTimeout(function () {
+                    setTimeout(function() {
                         if (alert) {
                             bootstrap.Alert.getOrCreateInstance(alert).close();
                         }
@@ -410,7 +436,7 @@
                 }
 
                 function updateCount(selector, value) {
-                    document.querySelectorAll(selector).forEach(function (badge) {
+                    document.querySelectorAll(selector).forEach(function(badge) {
                         badge.textContent = value ?? 0;
                     });
                 }
@@ -505,7 +531,7 @@
 
                 function debouncedCatalogLoad(url) {
                     clearTimeout(catalogTimer);
-                    catalogTimer = setTimeout(function () {
+                    catalogTimer = setTimeout(function() {
                         loadCatalog(url);
                     }, 400);
                 }
@@ -513,7 +539,7 @@
                 if (searchForm) {
                     const searchInput = searchForm.querySelector('input[name="search"]');
 
-                    searchForm.addEventListener('submit', function (event) {
+                    searchForm.addEventListener('submit', function(event) {
                         if (!catalogResults) {
                             return;
                         }
@@ -523,7 +549,7 @@
                         loadCatalog(catalogUrlFromForm(searchForm));
                     });
 
-                    searchInput?.addEventListener('input', function () {
+                    searchInput?.addEventListener('input', function() {
                         if (!catalogResults) {
                             return;
                         }
@@ -533,7 +559,7 @@
                     });
                 }
 
-                filterForm?.addEventListener('submit', function (event) {
+                filterForm?.addEventListener('submit', function(event) {
                     if (!catalogResults) {
                         return;
                     }
@@ -542,21 +568,21 @@
                     loadCatalog(catalogUrlFromForm(filterForm));
                 });
 
-                filterForm?.querySelectorAll('input').forEach(function (input) {
-                    input.addEventListener('change', function () {
+                filterForm?.querySelectorAll('input').forEach(function(input) {
+                    input.addEventListener('change', function() {
                         if (catalogResults) {
                             debouncedCatalogLoad(catalogUrlFromForm(filterForm));
                         }
                     });
 
-                    input.addEventListener('input', function () {
+                    input.addEventListener('input', function() {
                         if (input.type === 'number' && catalogResults) {
                             debouncedCatalogLoad(catalogUrlFromForm(filterForm));
                         }
                     });
                 });
 
-                document.addEventListener('click', function (event) {
+                document.addEventListener('click', function(event) {
                     const filterButton = event.target.closest('[data-open-filters], #filterBtn');
                     if (filterButton) {
                         document.getElementById('filterPanel')?.classList.toggle('d-none');
@@ -572,7 +598,8 @@
                         }
                     }
 
-                    const catalogLink = event.target.closest('[data-catalog-link], [data-catalog-pagination] a');
+                    const catalogLink = event.target.closest(
+                    '[data-catalog-link], [data-catalog-pagination] a');
                     if (catalogLink && catalogResults) {
                         event.preventDefault();
                         searchForm?.reset();
@@ -581,13 +608,13 @@
                     }
                 });
 
-                window.addEventListener('popstate', function () {
+                window.addEventListener('popstate', function() {
                     if (catalogResults) {
                         loadCatalog(window.location.href, false);
                     }
                 });
 
-                document.addEventListener('submit', async function (event) {
+                document.addEventListener('submit', async function(event) {
                     const form = event.target.closest('form[data-ajax-cart], form[data-ajax-wishlist]');
 
                     if (!form) {
@@ -625,21 +652,28 @@
                         if (form.matches('[data-ajax-wishlist]')) {
                             updateCount('[data-wishlist-count]', data.wishlist_count);
 
-                            document.querySelectorAll(`form[data-ajax-wishlist][data-product-id="${data.product_id}"] button`).forEach(function (wishlistButton) {
-                                const icon = wishlistButton.querySelector('i');
-                                wishlistButton.classList.toggle('btn-dark', data.in_wishlist);
-                                wishlistButton.classList.toggle('btn-light', !data.in_wishlist && wishlistButton.classList.contains('btn-icon'));
-                                wishlistButton.classList.toggle('btn-outline-dark', !data.in_wishlist && !wishlistButton.classList.contains('btn-icon'));
-                                icon?.classList.toggle('bi-heart-fill', data.in_wishlist);
-                                icon?.classList.toggle('bi-heart', !data.in_wishlist);
+                            document.querySelectorAll(
+                                    `form[data-ajax-wishlist][data-product-id="${data.product_id}"] button`)
+                                .forEach(function(wishlistButton) {
+                                    const icon = wishlistButton.querySelector('i');
+                                    wishlistButton.classList.toggle('btn-dark', data.in_wishlist);
+                                    wishlistButton.classList.toggle('btn-light', !data.in_wishlist &&
+                                        wishlistButton.classList.contains('btn-icon'));
+                                    wishlistButton.classList.toggle('btn-outline-dark', !data
+                                        .in_wishlist && !wishlistButton.classList.contains(
+                                            'btn-icon'));
+                                    icon?.classList.toggle('bi-heart-fill', data.in_wishlist);
+                                    icon?.classList.toggle('bi-heart', !data.in_wishlist);
 
-                                if (!wishlistButton.classList.contains('btn-icon')) {
-                                    wishlistButton.innerHTML = `<i class="bi ${data.in_wishlist ? 'bi-heart-fill' : 'bi-heart'} me-1"></i> ${data.in_wishlist ? 'Saved' : 'Wishlist'}`;
-                                }
-                            });
+                                    if (!wishlistButton.classList.contains('btn-icon')) {
+                                        wishlistButton.innerHTML =
+                                            `<i class="bi ${data.in_wishlist ? 'bi-heart-fill' : 'bi-heart'} me-1"></i> ${data.in_wishlist ? 'Saved' : 'Wishlist'}`;
+                                    }
+                                });
 
                             if (!data.in_wishlist) {
-                                document.querySelector(`[data-wishlist-card="${data.product_id}"]`)?.remove();
+                                document.querySelector(`[data-wishlist-card="${data.product_id}"]`)
+                                ?.remove();
                             }
                         }
 
