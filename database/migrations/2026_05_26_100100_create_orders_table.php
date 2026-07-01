@@ -13,9 +13,9 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();
             $table->string('order_number')->unique();
-            $table->string('status')->default('pending');
+            $table->enum('status', ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'])->default('pending');
             $table->string('payment_method')->default('cash_on_delivery');
-            $table->string('payment_status')->default('pending');
+            $table->enum('payment_status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
             $table->decimal('subtotal', 10, 2);
             $table->decimal('discount_total', 10, 2)->default(0);
             $table->decimal('total', 10, 2);
@@ -28,7 +28,15 @@ return new class extends Migration
             $table->string('state');
             $table->string('postal_code', 20);
             $table->text('notes')->nullable();
+            // ⏱ Important timestamps
             $table->timestamp('placed_at')->nullable();
+            $table->timestamp('confirmed_at')->nullable();
+            $table->timestamp('shipped_at')->nullable();
+            $table->timestamp('delivered_at')->nullable();
+            // 🔁 Return system support
+            $table->boolean('is_returned')->default(false);
+            $table->timestamp('return_requested_at')->nullable();
+            $table->timestamp('return_approved_at')->nullable();
             $table->timestamps();
         });
     }

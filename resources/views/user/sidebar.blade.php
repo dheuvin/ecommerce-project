@@ -24,5 +24,13 @@
             </a>
         </li>
 
+        <li class="nav-item mb-2">
+            <a href="{{ route('wallet.index') }}" class="nav-link text-dark">
+                <i class="bi bi-wallet2 me-2"></i>
+                Wallet
+            </a>
+        </li>
+
+
     </ul>
 </div>

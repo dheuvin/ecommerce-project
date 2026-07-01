@@ -28,6 +28,12 @@ class Order extends Model
         'invoice_path',
         'invoice_generated_at',
         'placed_at',
+        'confirmed_at',
+        'shipped_at',
+        'delivered_at',
+        'is_returned',
+        'return_requested_at',
+        'return_approved_at',
     ];
 
     protected $casts = [

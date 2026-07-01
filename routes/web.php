@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CommissionController;
 use App\Http\Controllers\Admin\TicketCategoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
@@ -13,8 +14,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WishlistController;
-use App\Http\Controllers\Admin\CommissionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,8 +35,6 @@ Route::get('/subcategory/{id}', [ProductController::class, 'subcategoryWiseProdu
 
 Route::get('/product/{product}', [ProductController::class, 'productView'])
     ->name('product.view');
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -73,17 +72,24 @@ Route::middleware(['auth', 'role:customer,seller,admin'])->group(function () {
 
     Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
 
-    });
+});
 
-    /*
-    |--------------------------------------------------------------------------
-    | CUSTOMER ROUTES
-    |--------------------------------------------------------------------------
-    */
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER ROUTES
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware(['auth', 'role:customer,user'])->group(function () {
 
+    Route::get('/wallet/add-money', [WalletController::class, 'addMoneyForm'])
+        ->name('wallet.addMoneyForm');
 
+    Route::post('/wallet/add-money', [WalletController::class, 'addMoney'])
+        ->name('wallet.addMoney');
+
+    Route::get('/wallet/index',[WalletController::class,'index'])
+        ->name('wallet.index');
 
     Route::get('/cart', [CartController::class, 'index'])
         ->name('cart.index');
@@ -129,7 +135,7 @@ Route::middleware(['auth', 'role:seller'])->group(function () {
     Route::get('/admin/sellerdashboard', [ProductController::class, 'sellerDashboard'])
         ->name('seller.dashboard');
 
-    Route::get('/commissions/sellerindex',[CommissionController::class, 'sellercommission'])
+    Route::get('/commissions/sellerindex', [CommissionController::class, 'sellercommission'])
         ->name('admin.sellercommissions.index');
 
 });
@@ -182,7 +188,7 @@ Route::middleware(['auth', 'role:seller,admin'])->group(function () {
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
-    Route::get('/commissions',[CommissionController::class, 'index'])
+    Route::get('/commissions', [CommissionController::class, 'index'])
         ->name('admin.commissions.index');
 
     Route::get('/admin/products/pending', [ProductController::class, 'pending'])
@@ -207,10 +213,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('admin/tickets', [TicketController::class, 'adminIndex'])->name('admin.tickets');
 
-
-
     Route::get('/admin/dashboard', [ProductController::class, 'dashboard'])
-    ->name('admin.dashboard');
+        ->name('admin.dashboard');
 
     Route::get('/admin/users', [UserController::class, 'index'])
         ->name('admin.user');

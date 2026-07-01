@@ -83,6 +83,7 @@
                             <option value="cash_on_delivery" @selected(old('payment_method', 'cash_on_delivery') === 'cash_on_delivery')>
                                 Cash on Delivery
                             </option>
+                             <option value="wallet">Wallet</option>
                         </select>
                         <div class="form-text">Online gateway support can plug into this same checkout flow.</div>
                     </div>

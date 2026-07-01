@@ -86,6 +86,16 @@ class User extends Authenticatable
         return in_array($this->role, ['customer', 'user'], true);
     }
 
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

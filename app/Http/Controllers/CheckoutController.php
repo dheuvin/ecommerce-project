@@ -9,6 +9,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PlatformSetting;
 use App\Models\Product;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 use App\Support\CartTotals;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +32,11 @@ class CheckoutController extends Controller
         $coupon = $this->sessionCoupon($cart);
         $summary = CartTotals::calculate($cart, $coupon);
 
-        return view('checkout.index', compact('cart', 'coupon', 'summary'));
+        $wallet = Wallet::firstOrCreate([
+            'user_id' => Auth::id(),
+        ]);
+
+        return view('checkout.index', compact('cart', 'coupon', 'summary', 'wallet'));
     }
 
     public function applyCoupon(Request $request)
@@ -79,7 +85,7 @@ class CheckoutController extends Controller
             'state' => 'required|string|max:120',
             'postal_code' => 'required|string|max:20',
             'notes' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:cash_on_delivery',
+            'payment_method' => 'required|in:cash_on_delivery,wallet',
         ]);
 
         $cart = $this->preparedCart();
@@ -91,35 +97,37 @@ class CheckoutController extends Controller
 
         $couponCode = session('checkout.coupon_code');
 
-        $order = DB::transaction(function () use ($cart, $couponCode, $validated) {
+        $wallet = Wallet::firstOrCreate([
+            'user_id' => Auth::id(),
+        ]);
+
+        $order = DB::transaction(function () use ($cart, $couponCode, $validated, $wallet) {
+
             $cart->load('items.product');
 
-            $products = Product::whereIn('id', $cart->items->pluck('product_id')->filter()->all())
+            $products = Product::whereIn(
+                'id',
+                $cart->items->pluck('product_id')->filter()->all()
+            )
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
 
             foreach ($cart->items as $item) {
+
                 $product = $products->get($item->product_id);
-
-                // if (! $product || $product->status !== 'active' || $product->stock < $item->quantity) {
-                //     throw ValidationException::withMessages([
-                //         'cart' => 'One or more products no longer have enough stock.',
-                //     ]);
-                // }
-
                 $variant = $item->variant;
 
-if (
-    ! $product ||
-    $product->status !== 'active' ||
-    ! $variant ||
-    $variant->stock < $item->quantity
-) {
-    throw ValidationException::withMessages([
-        'cart' => 'One or more products no longer have enough stock.',
-    ]);
-}
+                if (
+                    ! $product ||
+                    $product->status !== 'active' ||
+                    ! $variant ||
+                    $variant->stock < $item->quantity
+                ) {
+                    throw ValidationException::withMessages([
+                        'cart' => 'One or more products no longer have enough stock.',
+                    ]);
+                }
 
                 if ((float) $item->price !== (float) $product->price) {
                     $item->update(['price' => $product->price]);
@@ -129,10 +137,27 @@ if (
             $coupon = null;
 
             if ($couponCode) {
-                $coupon = Coupon::where('code', $couponCode)->lockForUpdate()->first();
+                $coupon = Coupon::where('code', $couponCode)
+                    ->lockForUpdate()
+                    ->first();
             }
 
-            $summary = CartTotals::calculate($cart->fresh('items.product'), $coupon);
+            $summary = CartTotals::calculate(
+                $cart->fresh('items.product'),
+                $coupon
+            );
+
+            // -----------------------------
+            // ✅ WALLET CHECK (BEFORE ORDER)
+            // -----------------------------
+            if ($validated['payment_method'] === 'wallet') {
+
+                if ($wallet->balance < $summary['total']) {
+                    throw ValidationException::withMessages([
+                        'wallet' => 'Insufficient wallet balance.',
+                    ]);
+                }
+            }
 
             if ($summary['items_count'] < 1) {
                 throw ValidationException::withMessages([
@@ -146,13 +171,16 @@ if (
                 ]);
             }
 
+            // -----------------------------
+            // CREATE ORDER
+            // -----------------------------
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'coupon_id' => $coupon?->id,
                 'order_number' => $this->generateOrderNumber(),
                 'status' => 'confirmed',
                 'payment_method' => $validated['payment_method'],
-                'payment_status' => 'pending',
+                'payment_status' => $validated['payment_method'] === 'wallet' ? 'paid' : 'pending',
                 'subtotal' => $summary['subtotal'],
                 'discount_total' => $summary['discount_total'],
                 'total' => $summary['total'],
@@ -168,48 +196,49 @@ if (
                 'placed_at' => now(),
             ]);
 
+            // -----------------------------
+            // WALLET DEDUCTION (AFTER ORDER)
+            // -----------------------------
+            if ($validated['payment_method'] === 'wallet') {
+
+                $wallet->balance -= $summary['total'];
+                $wallet->save();
+
+                WalletTransaction::create([
+                    'user_id' => Auth::id(),
+                    'type' => 'debit',
+                    'amount' => $summary['total'],
+                    'description' => 'Order Payment - '.$order->order_number,
+                ]);
+            }
+
             foreach ($cart->items as $item) {
+
                 $product = $products->get($item->product_id);
-                $commissionPercent =
-                PlatformSetting::first()->commission_percent;
 
-                $lineTotal =
-                    $product->price * $item->quantity;
+                $commissionPercent = PlatformSetting::first()->commission_percent;
 
-                $platformCommission =
-                    ($lineTotal * $commissionPercent) / 100;
+                $lineTotal = $product->price * $item->quantity;
 
-                $sellerEarning =
-                    $lineTotal - $platformCommission;
+                $platformCommission = ($lineTotal * $commissionPercent) / 100;
+
+                $sellerEarning = $lineTotal - $platformCommission;
 
                 OrderItem::create([
-
                     'order_id' => $order->id,
-
                     'product_id' => $product->id,
-
                     'seller_id' => $product->user_id,
-
                     'product_name' => $product->name,
-
                     'product_sku' => $product->sku,
-
                     'price' => $product->price,
-
                     'quantity' => $item->quantity,
-
                     'line_total' => $lineTotal,
-
                     'platform_commission_percent' => $commissionPercent,
-
                     'platform_commission_amount' => $platformCommission,
-
                     'seller_earning' => $sellerEarning,
-
                 ]);
 
-                // $product->decrement('stock', $item->quantity);
-                $variant->decrement('stock', $item->quantity);
+                $item->variant->decrement('stock', $item->quantity);
             }
 
             if ($coupon) {
@@ -222,9 +251,11 @@ if (
         });
 
         session()->forget('checkout.coupon_code');
+
         OrderPlaced::dispatch($order);
 
-        return redirect()->route('orders.show', $order)
+        return redirect()
+            ->route('orders.show', $order)
             ->with('success', 'Order placed successfully.');
     }
 
@@ -235,14 +266,15 @@ if (
 
         foreach ($cart->items as $item) {
             if (
-    ! $item->product ||
-    ! $item->variant ||
-    $item->product->status !== 'active' ||
-    $item->variant->stock < 1
-) {
-    $item->delete();
-    continue;
-}
+                ! $item->product ||
+                ! $item->variant ||
+                $item->product->status !== 'active' ||
+                $item->variant->stock < 1
+            ) {
+                $item->delete();
+
+                continue;
+            }
 
             $updates = [];
 
@@ -259,7 +291,7 @@ if (
             }
         }
 
-        return $cart->fresh('items.product.images','items.variant');
+        return $cart->fresh('items.product.images', 'items.variant');
     }
 
     private function sessionCoupon(Cart $cart): ?Coupon

@@ -7,6 +7,8 @@ use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
+use App\Models\Wallet;
 use App\Models\Wishlist;
 use App\Policies\CategoryPolicy;
 use App\Policies\CouponPolicy;
@@ -62,14 +64,20 @@ class AppServiceProvider extends ServiceProvider
                 'wishlistCount' => $wishlistCount,
             ]);
         });
-         View::composer('layouts.user', function ($view) {
+        View::composer('layouts.user', function ($view) {
 
-        $categories = Category::whereNull('parent_id')
-            ->with('children')
-            ->get();
+            $categories = Category::whereNull('parent_id')
+                ->with('children')
+                ->get();
 
-        $view->with('categories', $categories);
-    });
+            $view->with('categories', $categories);
+        });
+        User::created(function ($user) {
+            Wallet::create([
+                'user_id' => $user->id,
+                'balance' => 0,
+            ]);
+        });
 
     }
 }
